@@ -1,0 +1,33 @@
+@import "tailwindcss";
+
+/* Fuentes de contenido para el extractor (Tailwind v4) */
+@source "./resources/**/*.blade.php";
+@source "./resources/**/*.js";
+@source "./resources/**/*.vue";
+@source "./app/Filament/**/*.php";
+@source "./vendor/filament/**/*.blade.php";
+
+/* Paleta base alineada con el panel (primary Amber) */
+@theme {
+  --color-primary-50: 255 251 235;
+  --color-primary-100: 254 243 199;
+  --color-primary-200: 253 230 138;
+  --color-primary-300: 252 211 77;
+  --color-primary-400: 251 191 36;
+  --color-primary-500: 245 158 11;
+  --color-primary-600: 217 119 6;
+  --color-primary-700: 180 83 9;
+  --color-primary-800: 146 64 14;
+  --color-primary-900: 120 53 15;
+}
+
+/* Ajustes UI genéricos para tarjetas del tablero */
+.board-card {
+  @apply rounded-lg border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-3 shadow-sm hover:shadow transition;
+}
+.board-col {
+  @apply rounded-xl border bg-white/50 dark:bg-gray-900/40 backdrop-blur supports-[backdrop-filter]:bg-white/60;
+}
+.board-col-header {
+  @apply sticky top-0 z-10 border-b px-4 py-3 rounded-t-xl bg-white/70 dark:bg-gray-900/60 backdrop-blur;
+}
