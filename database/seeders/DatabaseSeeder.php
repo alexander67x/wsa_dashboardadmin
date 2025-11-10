@@ -13,20 +13,17 @@ class DatabaseSeeder extends Seeder
      */
     public function run(): void
     {
-        // Crear usuario de prueba si no existe
-        User::firstOrCreate(
-            ['email' => 'admin@example.com'],
-            [
-                'name' => 'Administrador',
-                'password' => bcrypt('password'),
-                'email_verified_at' => now(),
-            ]
-        );
-
-        // Ejecutar seeders
+        // Ejecutar seeders en orden
         $this->call([
-            ProyectoSeeder::class,
-            TareaSeeder::class,
+            UserSeeder::class,              // Usuarios primero
+            ClienteSeeder::class,           // Clientes
+            EmpleadoSeeder::class,          // Empleados
+            ProyectoSeeder::class,          // Proyectos
+            AlmacenSeeder::class,           // Almacenes
+            MaterialGrupoSeeder::class,     // Grupos de materiales
+            MaterialSubgrupoSeeder::class,  // Subgrupos de materiales
+            MaterialSeeder::class,          // Materiales
+            TareaSeeder::class,             // Tareas
         ]);
     }
 }
