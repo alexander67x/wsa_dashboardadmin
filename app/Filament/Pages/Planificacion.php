@@ -18,6 +18,11 @@ class Planificacion extends Page
     protected static ?string $title = 'Planificación';
     protected string $view = 'filament.pages.planificacion';
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        return false; // Ocultar de la navegación, ahora se usa TareaResource
+    }
+
     public ?string $codProy = null;
     public ?KanbanBoard $board = null;
 
