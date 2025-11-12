@@ -40,7 +40,6 @@ class Proyecto extends Model
         'supervisor_obra',
     ];
 
-    // Ya no hay campos virtuales: los datos de ubicación están en la tabla `proyectos`
     protected $appends = [];
 
     protected $casts = [
@@ -57,7 +56,6 @@ class Proyecto extends Model
     {
         return $this->belongsTo(Cliente::class, 'cod_cliente', 'cod_cliente');
     }
-
 
     public function responsable(): BelongsTo
     {
@@ -77,8 +75,6 @@ class Proyecto extends Model
     public function empleados(): BelongsToMany
     {
         return $this->belongsToMany(Empleado::class, 'asignaciones_proyecto', 'cod_proy', 'cod_empleado')
-                    // Columnas reales definidas en la migración:
-                    // id_asignacion, fecha_inicio_asignacion, fecha_fin_asignacion, rol_en_proyecto, estado, created_at, updated_at, deleted_at
                     ->withPivot([
                         'id_asignacion',
                         'fecha_inicio_asignacion',
@@ -97,6 +93,11 @@ class Proyecto extends Model
     public function kanbanBoard(): HasOne
     {
         return $this->hasOne(KanbanBoard::class, 'cod_proy', 'cod_proy');
+    }
+
+    public function tareas(): HasMany
+    {
+        return $this->hasMany(Tarea::class, 'cod_proy', 'cod_proy');
     }
 
     // Accessors para campos virtuales
