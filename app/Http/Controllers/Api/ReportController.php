@@ -17,6 +17,7 @@ class ReportController extends Controller
     {
         $validated = $request->validate([
             'projectId' => ['nullable', 'string', 'exists:proyectos,cod_proy'],
+            'taskId' => ['nullable', 'integer', 'exists:tareas,id_tarea'],
             'status' => ['nullable', Rule::in(['pending', 'approved', 'rejected'])],
             'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
@@ -25,8 +26,9 @@ class ReportController extends Controller
         $limit = $validated['limit'] ?? 50;
 
         $reports = ReporteAvanceTarea::query()
-            ->with(['proyecto', 'registradoPor'])
+            ->with(['proyecto', 'tarea', 'registradoPor'])
             ->when($validated['projectId'] ?? null, fn ($query, $codProy) => $query->where('cod_proy', $codProy))
+            ->when($validated['taskId'] ?? null, fn ($query, $taskId) => $query->where('id_tarea', $taskId))
             ->when($statusFilter, fn ($query, $statuses) => $query->whereIn('estado', $statuses))
             ->orderByDesc('fecha_reporte')
             ->limit($limit)
@@ -100,6 +102,8 @@ class ReportController extends Controller
         return [
             'id' => (string) $report->getKey(),
             'projectId' => $report->cod_proy,
+            'taskId' => $report->id_tarea ? (string) $report->id_tarea : null,
+            'taskTitle' => $report->tarea?->titulo,
             'title' => $report->titulo,
             'project' => $report->proyecto?->nombre_ubicacion,
             'date' => optional($report->fecha_reporte)->toDateString(),
@@ -128,6 +132,10 @@ class ReportController extends Controller
         return [
             'id' => (string) $report->getKey(),
             'projectId' => $report->cod_proy,
+            'taskId' => $report->id_tarea ? (string) $report->id_tarea : null,
+            'taskTitle' => $report->tarea?->titulo,
+            'taskDescription' => $report->tarea?->descripcion,
+            'taskStatus' => $report->tarea?->estado,
             'title' => $report->titulo,
             'project' => $report->proyecto?->nombre_ubicacion,
             'type' => 'progress',
@@ -144,7 +152,6 @@ class ReportController extends Controller
             'feedback' => $report->observaciones_supervisor,
             'difficulties' => $report->dificultades_encontradas,
             'materialsUsed' => $report->materiales_utilizados,
-            'taskId' => $report->id_tarea ? (string) $report->id_tarea : null,
         ];
     }
 

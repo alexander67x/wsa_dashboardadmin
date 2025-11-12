@@ -33,3 +33,6 @@ class ReporteArchivo extends Model
 
 
 
+
+
+

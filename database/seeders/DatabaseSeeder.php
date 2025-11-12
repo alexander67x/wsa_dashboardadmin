@@ -24,6 +24,7 @@ class DatabaseSeeder extends Seeder
             MaterialSubgrupoSeeder::class,  // Subgrupos de materiales
             MaterialSeeder::class,          // Materiales
             TareaSeeder::class,             // Tareas
+            ReporteSeeder::class,           // Reportes (después de tareas)
         ]);
     }
 }
