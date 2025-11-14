@@ -3,7 +3,9 @@
 namespace App\Filament\Resources\Reportes\Pages;
 
 use App\Filament\Resources\Reportes\ReporteResource;
+use App\Models\Almacen;
 use App\Models\Empleado;
+use App\Models\StockAlmacen;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -18,7 +20,7 @@ class ViewReporte extends ViewRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         // Cargar relaciones necesarias
-        $this->record->load(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor', 'archivos']);
+        $this->record->load(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor', 'archivos', 'materiales.material']);
         
         return $data;
     }
@@ -90,6 +92,7 @@ class ViewReporte extends ViewRecord
                 return;
             }
 
+            // Actualizar estado del reporte
             $this->record->update([
                 'estado' => 'aprobado',
                 'observaciones_supervisor' => $observaciones,
@@ -97,11 +100,71 @@ class ViewReporte extends ViewRecord
                 'aprobado_por' => $empleado->cod_empleado,
             ]);
 
+            // Restar materiales del stock si el reporte tiene materiales
+            $materialesUsados = $this->record->materiales;
+            
+            if ($materialesUsados->isNotEmpty()) {
+                // Buscar almacén asociado al proyecto (debe existir ya que la API solo muestra materiales de este almacén)
+                $almacen = Almacen::where('cod_proy', $this->record->cod_proy)
+                    ->where('activo', true)
+                    ->first();
+
+                if (!$almacen) {
+                    DB::rollBack();
+                    Notification::make()
+                        ->title('Error')
+                        ->body('No se encontró un almacén activo asociado al proyecto. El reporte no puede ser aprobado.')
+                        ->danger()
+                        ->send();
+                    return;
+                }
+
+                $errores = [];
+                
+                foreach ($materialesUsados as $reporteMaterial) {
+                    // Cargar información del material para mensajes más descriptivos
+                    $material = \App\Models\Material::find($reporteMaterial->id_material);
+                    $nombreMaterial = $material ? $material->nombre_producto : "ID {$reporteMaterial->id_material}";
+                    
+                    // Buscar el stock en el almacén del proyecto
+                    $stock = StockAlmacen::where('id_almacen', $almacen->id_almacen)
+                        ->where('id_material', $reporteMaterial->id_material)
+                        ->first();
+
+                    if (!$stock) {
+                        // El material debería existir en el almacén ya que la API solo muestra materiales disponibles
+                        $errores[] = "Material '{$nombreMaterial}' (ID: {$reporteMaterial->id_material}) no encontrado en el almacén del proyecto '{$almacen->nombre}' (ID: {$almacen->id_almacen}). Verifique que el material esté correctamente registrado en el almacén.";
+                        continue;
+                    }
+
+                    $cantidadDisponible = (float) $stock->cantidad_disponible;
+                    $cantidadUsada = (float) $reporteMaterial->cantidad_usada;
+
+                    if ($cantidadDisponible < $cantidadUsada) {
+                        $errores[] = "Stock insuficiente para '{$nombreMaterial}'. Disponible: {$cantidadDisponible}, Requerido: {$cantidadUsada}";
+                        continue;
+                    }
+
+                    // Restar del stock disponible
+                    $stock->decrement('cantidad_disponible', $cantidadUsada);
+                }
+
+                if (!empty($errores)) {
+                    DB::rollBack();
+                    Notification::make()
+                        ->title('Error al procesar materiales')
+                        ->body('El reporte no pudo ser aprobado: ' . implode('; ', $errores))
+                        ->danger()
+                        ->send();
+                    return;
+                }
+            }
+
             DB::commit();
 
             Notification::make()
                 ->title('Reporte Aprobado')
-                ->body('El reporte ha sido aprobado exitosamente.')
+                ->body('El reporte ha sido aprobado exitosamente' . ($materialesUsados->isNotEmpty() ? ' y los materiales han sido descontados del stock.' : '.'))
                 ->success()
                 ->send();
 

@@ -5,19 +5,22 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class ReporteArchivo extends Model
+class ReporteMaterial extends Model
 {
-    protected $table = 'reporte_archivos';
+    protected $table = 'reporte_materiales';
+    protected $primaryKey = 'id';
     public $timestamps = false;
 
     protected $fillable = [
         'id_reporte',
-        'archivo_id',
-        'es_foto_principal',
+        'id_material',
+        'cantidad_usada',
+        'unidad_medida',
+        'observaciones',
     ];
 
     protected $casts = [
-        'es_foto_principal' => 'boolean',
+        'cantidad_usada' => 'decimal:2',
     ];
 
     public function reporte(): BelongsTo
@@ -25,17 +28,8 @@ class ReporteArchivo extends Model
         return $this->belongsTo(ReporteAvanceTarea::class, 'id_reporte', 'id_reporte');
     }
 
-    public function archivo(): BelongsTo
+    public function material(): BelongsTo
     {
-        return $this->belongsTo(Archivo::class, 'archivo_id', 'id_archivo');
+        return $this->belongsTo(Material::class, 'id_material', 'id_material');
     }
 }
-
-
-
-
-
-
-
-
-

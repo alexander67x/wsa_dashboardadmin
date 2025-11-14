@@ -16,20 +16,16 @@ class TareaSeeder extends Seeder
      */
     public function run(): void
     {
-        // Obtener todos los proyectos existentes
+        
         $proyectos = Proyecto::all();
         
-        if ($proyectos->isEmpty()) {
-            // Si no hay proyectos, crear uno primero
-            $this->call([ProyectoSeeder::class]);
+        if ($proyectos->isEmpty()) {            $this->call([ProyectoSeeder::class]);
             $proyectos = Proyecto::all();
         }
 
-        // Obtener empleados existentes o crear algunos si no hay
         $empleados = Empleado::all();
         
         if ($empleados->isEmpty()) {
-            // Crear algunos empleados de ejemplo si no existen
             $empleado1 = Empleado::create([
                 'nombre_completo' => 'Juan Pérez',
                 'cargo' => 'Ingeniero Civil',
@@ -53,13 +49,10 @@ class TareaSeeder extends Seeder
             $empleados = collect([$empleado1, $empleado2]);
         }
 
-        // Estados y prioridades posibles
         $estados = ['pendiente', 'en_proceso', 'en_revision', 'finalizada', 'cancelada'];
         $prioridades = ['baja', 'media', 'alta'];
         
-        // Crear tareas para cada proyecto
         foreach ($proyectos as $proyecto) {
-            // Crear entre 5 y 15 tareas por proyecto
             $numTareas = rand(5, 15);
             
             for ($i = 1; $i <= $numTareas; $i++) {

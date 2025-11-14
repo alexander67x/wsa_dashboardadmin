@@ -15,7 +15,8 @@ class DatabaseSeeder extends Seeder
     {
         // Ejecutar seeders en orden
         $this->call([
-            UserSeeder::class,              // Usuarios primero
+            RoleSeeder::class,              // Roles primero
+            UserSeeder::class,              // Usuarios
             ClienteSeeder::class,           // Clientes
             EmpleadoSeeder::class,          // Empleados
             ProyectoSeeder::class,          // Proyectos

@@ -69,29 +69,71 @@ class ProyectoSeeder extends Seeder
             $supervisorId = $supervisor->cod_empleado;
         }
 
-        // Crear un proyecto
-        DB::table('proyectos')->insert([
-            'cod_proy' => 'PROY-' . Str::random(8), // Código único
-            'cod_cliente' => $clienteId,
-            'nombre_ubicacion' => 'Construcción Edificio Central',
-            'direccion' => 'Calle 10, Zona Sur, La Paz',
-            'ciudad' => 'La Paz',
-            'pais' => 'Bolivia',
-            'latitud' => -16.5000000,
-            'longitud' => -68.1500000,
-            'tipo_ubicacion' => 'obra',
-            'fecha_inicio' => Carbon::now()->subMonth(),
-            'fecha_fin_estimada' => Carbon::now()->addMonths(6),
-            'fecha_fin_real' => null,
-            'estado' => 'activo',
-            'descripcion' => 'Construcción de un edificio de oficinas de 10 pisos.',
-            'avance_financiero' => 250000.00,
-            'gasto_real' => 200000.00,
-            'rentabilidad' => 15,
-            'responsable_proyecto' => $responsableId,
-            'supervisor_obra' => $supervisorId,
-            'created_at' => Carbon::now(),
-            'updated_at' => Carbon::now(),
-        ]);
+        // Crear proyectos activos con códigos fijos para asegurar almacenes asociados
+        $proyectos = [
+            [
+                'cod_proy' => 'PROY-001',
+                'nombre_ubicacion' => 'Construcción Edificio Central',
+                'direccion' => 'Calle 10, Zona Sur, La Paz',
+                'ciudad' => 'La Paz',
+                'pais' => 'Bolivia',
+                'latitud' => -16.5000000,
+                'longitud' => -68.1500000,
+                'fecha_inicio' => Carbon::now()->subMonth(),
+                'fecha_fin_estimada' => Carbon::now()->addMonths(6),
+                'descripcion' => 'Construcción de un edificio de oficinas de 10 pisos.',
+                'avance_financiero' => 250000.00,
+                'gasto_real' => 200000.00,
+                'rentabilidad' => 15,
+            ],
+            [
+                'cod_proy' => 'PROY-002',
+                'nombre_ubicacion' => 'Remodelación Centro Comercial',
+                'direccion' => 'Av. 6 de Agosto, Zona Central, La Paz',
+                'ciudad' => 'La Paz',
+                'pais' => 'Bolivia',
+                'latitud' => -16.5100000,
+                'longitud' => -68.1300000,
+                'fecha_inicio' => Carbon::now()->subWeeks(2),
+                'fecha_fin_estimada' => Carbon::now()->addMonths(4),
+                'descripcion' => 'Remodelación completa del centro comercial.',
+                'avance_financiero' => 180000.00,
+                'gasto_real' => 150000.00,
+                'rentabilidad' => 12,
+            ],
+            [
+                'cod_proy' => 'PROY-003',
+                'nombre_ubicacion' => 'Construcción Residencial Zona Norte',
+                'direccion' => 'Calle 15, Zona Norte, La Paz',
+                'ciudad' => 'La Paz',
+                'pais' => 'Bolivia',
+                'latitud' => -16.4800000,
+                'longitud' => -68.1200000,
+                'fecha_inicio' => Carbon::now()->subDays(10),
+                'fecha_fin_estimada' => Carbon::now()->addMonths(8),
+                'descripcion' => 'Construcción de complejo residencial de 5 edificios.',
+                'avance_financiero' => 320000.00,
+                'gasto_real' => 280000.00,
+                'rentabilidad' => 18,
+            ],
+        ];
+
+        foreach ($proyectos as $proyectoData) {
+            DB::table('proyectos')->updateOrInsert(
+                ['cod_proy' => $proyectoData['cod_proy']],
+                array_merge($proyectoData, [
+                    'cod_cliente' => $clienteId,
+                    'tipo_ubicacion' => 'obra',
+                    'fecha_fin_real' => null,
+                    'estado' => 'activo',
+                    'responsable_proyecto' => $responsableId,
+                    'supervisor_obra' => $supervisorId,
+                    'created_at' => Carbon::now(),
+                    'updated_at' => Carbon::now(),
+                ])
+            );
+        }
+
+        $this->command->info('✅ Proyectos activos creados/actualizados: ' . count($proyectos));
     }
 }

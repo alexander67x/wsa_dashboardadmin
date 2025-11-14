@@ -53,6 +53,12 @@ class Archivo extends Model
             return null;
         }
 
+        // Si es una URL completa (http/https), devolverla directamente
+        if (filter_var($this->ruta_storage, FILTER_VALIDATE_URL)) {
+            return $this->ruta_storage;
+        }
+
+        // Si no, intentar generar la URL desde el storage local
         try {
             return Storage::url($this->ruta_storage);
         } catch (\Throwable) {
@@ -60,6 +66,8 @@ class Archivo extends Model
         }
     }
 }
+
+
 
 
 

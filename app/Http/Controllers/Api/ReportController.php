@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Archivo;
 use App\Models\ReporteAvanceTarea;
+use App\Models\ReporteMaterial;
 use App\Models\Tarea;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
@@ -62,8 +63,16 @@ class ReportController extends Controller
             'difficulties' => ['nullable', 'string'],
             'materialsUsed' => ['nullable', 'string'],
             'observations' => ['nullable', 'string'],
-            'attachments' => ['array'],
-            'attachments.*' => ['integer', 'distinct', 'exists:archivos,id_archivo'],
+            'images' => ['nullable', 'array'],
+            'images.*.url' => ['required', 'url'],
+            'images.*.latitude' => ['nullable', 'numeric', 'between:-90,90'],
+            'images.*.longitude' => ['nullable', 'numeric', 'between:-180,180'],
+            'images.*.takenAt' => ['nullable', 'date'],
+            'materials' => ['nullable', 'array'],
+            'materials.*.materialId' => ['required', 'integer', 'exists:materiales,id_material'],
+            'materials.*.quantity' => ['required', 'numeric', 'min:0.01'],
+            'materials.*.unit' => ['nullable', 'string', 'max:50'],
+            'materials.*.observations' => ['nullable', 'string'],
         ]);
 
         $task = Tarea::where('cod_proy', $data['projectId'])->findOrFail($data['taskId']);
@@ -82,8 +91,39 @@ class ReportController extends Controller
                 'observaciones_supervisor' => $data['observations'] ?? null,
             ]);
 
-            if (! empty($data['attachments'])) {
-                $report->archivos()->attach($data['attachments']);
+            if (! empty($data['images'])) {
+                $archivoIds = [];
+                foreach ($data['images'] as $image) {
+                    $imageUrl = $image['url'];
+                    $archivo = Archivo::create([
+                        'entidad' => 'reporte',
+                        'entidad_id' => $report->getKey(),
+                        'nombre_original' => basename(parse_url($imageUrl, PHP_URL_PATH)) ?: 'image.jpg',
+                        'ruta_storage' => $imageUrl,
+                        'tipo_mime' => 'image/jpeg',
+                        'tamano_bytes' => null,
+                        'es_foto' => true,
+                        'latitud' => $image['latitude'] ?? null,
+                        'longitud' => $image['longitude'] ?? null,
+                        'tomado_en' => isset($image['takenAt']) ? $image['takenAt'] : null,
+                        'creado_por' => $data['authorId'],
+                    ]);
+                    $archivoIds[] = $archivo->id_archivo;
+                }
+                $report->archivos()->attach($archivoIds);
+            }
+
+            // Guardar materiales usados
+            if (! empty($data['materials'])) {
+                foreach ($data['materials'] as $materialData) {
+                    ReporteMaterial::create([
+                        'id_reporte' => $report->getKey(),
+                        'id_material' => $materialData['materialId'],
+                        'cantidad_usada' => $materialData['quantity'],
+                        'unidad_medida' => $materialData['unit'] ?? null,
+                        'observaciones' => $materialData['observations'] ?? null,
+                    ]);
+                }
             }
 
             return $report;

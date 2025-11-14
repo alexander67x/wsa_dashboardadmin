@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Reportes\Schemas;
 
+use App\Filament\Components\ImageGallery;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
@@ -18,15 +19,29 @@ class ReporteForm
                     ->disabled()
                     ->dehydrated(false),
                 
-                TextInput::make('proyecto.nombre_ubicacion')
+                TextInput::make('proyecto_nombre')
                     ->label('Proyecto')
                     ->disabled()
-                    ->dehydrated(false),
+                    ->dehydrated(false)
+                    ->formatStateUsing(function ($state, $record) {
+                        if (!$record) {
+                            return '—';
+                        }
+                        $record->loadMissing('proyecto');
+                        return $record->proyecto?->nombre_ubicacion ?? '—';
+                    }),
                 
-                TextInput::make('tarea.titulo')
+                TextInput::make('tarea_titulo')
                     ->label('Tarea')
                     ->disabled()
-                    ->dehydrated(false),
+                    ->dehydrated(false)
+                    ->formatStateUsing(function ($state, $record) {
+                        if (!$record) {
+                            return '—';
+                        }
+                        $record->loadMissing('tarea');
+                        return $record->tarea?->titulo ?? '—';
+                    }),
                 
                 TextInput::make('estado')
                     ->label('Estado')
@@ -79,14 +94,44 @@ class ReporteForm
                     ->disabled()
                     ->dehydrated(false)
                     ->columnSpanFull()
-                    ->rows(3)
-                    ->default('—'),
+                    ->formatStateUsing(function ($state, $record) {
+                        if (!$record) {
+                            return 'No se registraron materiales utilizados';
+                        }
+                        
+                        $record->loadMissing('materiales.material');
+                        
+                        if (!$record->materiales || $record->materiales->isEmpty()) {
+                            return 'No se registraron materiales utilizados';
+                        }
+                        
+                        $lista = [];
+                        foreach ($record->materiales as $reporteMaterial) {
+                            $material = $reporteMaterial->material;
+                            $nombreMaterial = $material ? $material->nombre_producto : "Material ID: {$reporteMaterial->id_material}";
+                            $cantidad = number_format($reporteMaterial->cantidad_usada, 2);
+                            $unidad = $reporteMaterial->unidad_medida ?? ($material?->unidad_medida ?? '');
+                            $observaciones = $reporteMaterial->observaciones ? " - {$reporteMaterial->observaciones}" : '';
+                            
+                            $lista[] = "• {$nombreMaterial}: {$cantidad} {$unidad}{$observaciones}";
+                        }
+                        
+                        return implode("\n", $lista);
+                    })
+                    ->rows(5),
                 
                 // Información del Registro
-                TextInput::make('registradoPor.nombre_completo')
+                TextInput::make('registrado_por_nombre')
                     ->label('Registrado por')
                     ->disabled()
-                    ->dehydrated(false),
+                    ->dehydrated(false)
+                    ->formatStateUsing(function ($state, $record) {
+                        if (!$record) {
+                            return '—';
+                        }
+                        $record->loadMissing('registradoPor');
+                        return $record->registradoPor?->nombre_completo ?? '—';
+                    }),
                 
                 TextInput::make('fecha_reporte_2')
                     ->label('Fecha de Registro')
@@ -108,11 +153,17 @@ class ReporteForm
                     }),
                 
                 // Aprobación (solo visible si está aprobado/rechazado)
-                TextInput::make('aprobadoPor.nombre_completo')
+                TextInput::make('aprobado_por_nombre')
                     ->label('Aprobado por')
                     ->disabled()
                     ->dehydrated(false)
-                    ->default('—')
+                    ->formatStateUsing(function ($state, $record) {
+                        if (!$record) {
+                            return '—';
+                        }
+                        $record->loadMissing('aprobadoPor');
+                        return $record->aprobadoPor?->nombre_completo ?? '—';
+                    })
                     ->visible(fn ($record) => $record && in_array($record->estado ?? '', ['aprobado', 'rechazado'])),
                 
                 TextInput::make('fecha_aprobacion')
@@ -143,36 +194,39 @@ class ReporteForm
                     ->default('—')
                     ->visible(fn ($record) => $record && in_array($record->estado ?? '', ['aprobado', 'rechazado'])),
                 
-                // Evidencias
+                // Evidencias - Imágenes
+                ImageGallery::make('images_gallery')
+                    ->label('Fotos del Reporte')
+                    ->columnSpanFull()
+                    ->dehydrated(false)
+                    ->visible(fn ($record) => $record && $record->archivos && $record->archivos->where('es_foto', true)->isNotEmpty()),
+                
+                // Archivos no-foto
                 Textarea::make('archivos_list')
-                    ->label('Archivos Adjuntos')
+                    ->label('Otros Archivos Adjuntos')
                     ->disabled()
                     ->dehydrated(false)
                     ->columnSpanFull()
                     ->formatStateUsing(function ($state, $record) {
                         if (!$record || !$record->archivos) {
-                            return 'No hay archivos adjuntos';
+                            return 'No hay otros archivos adjuntos';
                         }
                         
-                        $archivos = $record->archivos;
+                        $archivos = $record->archivos->filter(fn ($archivo) => !$archivo->es_foto);
                         if ($archivos->isEmpty()) {
-                            return 'No hay archivos adjuntos';
+                            return 'No hay otros archivos adjuntos';
                         }
                         
                         $lista = [];
                         foreach ($archivos as $archivo) {
                             $url = $archivo->url ?? '#';
-                            if ($archivo->es_foto) {
-                                $lista[] = "📷 Foto: {$archivo->nombre_original} - Ver: {$url}";
-                            } else {
-                                $lista[] = "📄 Archivo: {$archivo->nombre_original} - Ver: {$url}";
-                            }
+                            $lista[] = "📄 Archivo: {$archivo->nombre_original} - Ver: {$url}";
                         }
                         
                         return implode("\n", $lista);
                     })
-                    ->rows(5)
-                    ->visible(fn ($record) => $record && $record->archivos && $record->archivos->isNotEmpty()),
+                    ->rows(3)
+                    ->visible(fn ($record) => $record && $record->archivos && $record->archivos->where('es_foto', false)->isNotEmpty()),
             ]);
     }
 }

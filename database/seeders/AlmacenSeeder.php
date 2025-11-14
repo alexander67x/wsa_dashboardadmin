@@ -62,13 +62,25 @@ class AlmacenSeeder extends Seeder
 
         $this->command->info("Almacén Central creado: {$almacenCentral->nombre}");
 
-        // 2. Crear Almacenes de Proyecto (dependen del almacén central)
+        // 2. Crear Almacenes de Proyecto para TODOS los proyectos activos
+        // Asegurar que cada proyecto activo tenga un almacén asociado
+        $proyectosActivos = Proyecto::where('estado', 'activo')->get();
+        
+        if ($proyectosActivos->isEmpty()) {
+            $this->command->warn('⚠️  No se encontraron proyectos activos. Se crearán almacenes para todos los proyectos.');
+            $proyectosActivos = $proyectos;
+        }
+
         $almacenesProyecto = [];
-        foreach ($proyectos as $index => $proyecto) {
+        foreach ($proyectosActivos as $index => $proyecto) {
             $responsableProyecto = $empleados->skip($index % $empleados->count())->first();
             
+            // Generar código único basado en el código del proyecto
+            $codigoAlmacen = 'ALM-' . $proyecto->cod_proy;
+            
+            // Usar firstOrCreate para evitar duplicados
             $almacenProyecto = Almacen::firstOrCreate(
-                ['codigo_almacen' => 'ALM-PROY-' . str_pad($index + 1, 3, '0', STR_PAD_LEFT)],
+                ['codigo_almacen' => $codigoAlmacen],
                 [
                     'nombre' => 'Almacén - ' . $proyecto->nombre_ubicacion,
                     'direccion' => $proyecto->direccion ?? 'Dirección del proyecto',
@@ -87,8 +99,26 @@ class AlmacenSeeder extends Seeder
                 ]
             );
 
+            // Si el almacén ya existía, actualizarlo para asegurar que esté correctamente configurado
+            if ($almacenProyecto->wasRecentlyCreated === false) {
+                $almacenProyecto->update([
+                    'activo' => true,
+                    'nombre' => 'Almacén - ' . $proyecto->nombre_ubicacion,
+                    'direccion' => $proyecto->direccion ?? $almacenProyecto->direccion,
+                    'ciudad' => $proyecto->ciudad ?? $almacenProyecto->ciudad,
+                    'pais' => $proyecto->pais ?? $almacenProyecto->pais,
+                    'latitud' => $proyecto->latitud ?? $almacenProyecto->latitud,
+                    'longitud' => $proyecto->longitud ?? $almacenProyecto->longitud,
+                    'responsable' => $responsableProyecto->cod_empleado,
+                    'cod_proy' => $proyecto->cod_proy,
+                    'updated_at' => Carbon::now(),
+                ]);
+                $this->command->info("Almacén de Proyecto actualizado: {$almacenProyecto->nombre} para proyecto {$proyecto->cod_proy}");
+            } else {
+                $this->command->info("Almacén de Proyecto creado: {$almacenProyecto->nombre} para proyecto {$proyecto->cod_proy}");
+            }
+
             $almacenesProyecto[] = $almacenProyecto;
-            $this->command->info("Almacén de Proyecto creado: {$almacenProyecto->nombre} para proyecto {$proyecto->cod_proy}");
         }
 
         // 3. Crear algunos Almacenes Temporales (opcional)
