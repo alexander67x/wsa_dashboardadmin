@@ -17,9 +17,51 @@ class AuthController extends Controller
 		]);
 
 		$user = User::where('email', $credentials['email'])->first();
-		if (! $user || ! Hash::check($credentials['password'], $user->password)) {
+		
+		// Si el usuario no existe, retornar error genérico
+		if (! $user) {
 			return response()->json(['message' => 'Credenciales inválidas'], 422);
 		}
+
+		// Verificar si el usuario está activo
+		if (! $user->is_active) {
+			return response()->json(['message' => 'Su cuenta ha sido desactivada. Contacte al administrador.'], 403);
+		}
+
+		// Verificar contraseña
+		if (! Hash::check($credentials['password'], $user->password)) {
+			// El email es correcto pero la contraseña es incorrecta
+			$newAttempts = $user->failed_login_attempts + 1;
+			
+			// Si llega a 5 intentos fallidos, inactivar el usuario
+			if ($newAttempts >= 5) {
+				$user->update([
+					'failed_login_attempts' => $newAttempts,
+					'last_failed_login_at' => now(),
+					'is_active' => false,
+				]);
+				return response()->json([
+					'message' => 'Su cuenta ha sido desactivada debido a múltiples intentos fallidos de inicio de sesión. Contacte al administrador.'
+				], 403);
+			}
+
+			$user->update([
+				'failed_login_attempts' => $newAttempts,
+				'last_failed_login_at' => now(),
+			]);
+
+			$remainingAttempts = 5 - $newAttempts;
+			return response()->json([
+				'message' => 'Credenciales inválidas',
+				'attempts_remaining' => $remainingAttempts
+			], 422);
+		}
+
+		// Login exitoso: resetear contador de intentos fallidos
+		$user->update([
+			'failed_login_attempts' => 0,
+			'last_failed_login_at' => null,
+		]);
 
 		$token = $user->createToken('mobile')->plainTextToken;
 
@@ -36,9 +78,17 @@ class AuthController extends Controller
 	public function me(Request $request)
 	{
 		$user = $request->user();
+		$empleado = $user->empleado;
+		$role = $empleado?->role;
+		
 		return [
 			'id' => (string) $user->id,
 			'name' => $user->name,
+			'role' => $role ? [
+				'id' => $role->id_role,
+				'nombre' => $role->nombre,
+				'descripcion' => $role->descripcion,
+			] : null,
 		];
 	}
 

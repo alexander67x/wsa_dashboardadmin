@@ -19,7 +19,7 @@ return new class extends Migration
             $table->text('descripcion');
             $table->enum('tipo_incidencia', ['falla_equipos', 'accidente', 'retraso_material', 'problema_calidad', 'otro'])->index();
             $table->enum('severidad', ['critica', 'alta', 'media', 'baja'])->default('media')->index();
-            $table->enum('estado', ['abierta', 'en_proceso', 'resuelta', 'cerrada', 'rechazada'])->nullable()->default('abierta');
+            $table->enum('estado', ['abierta', 'en_proceso', 'resuelta', 'verificacion', 'cerrada', 'reabierta'])->nullable()->default('abierta');
             $table->decimal('latitud', 10, 7)->nullable();
             $table->decimal('longitud', 10, 7)->nullable();
             $table->integer('reportado_por')->index();

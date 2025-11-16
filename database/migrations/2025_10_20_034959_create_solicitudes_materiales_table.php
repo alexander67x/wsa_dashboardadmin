@@ -28,8 +28,7 @@ return new class extends Migration
             $table->string('motivo')->nullable();
             $table->text('observaciones')->nullable();
             $table->boolean('urgente')->nullable()->default(false);
-            $table->timestamp('created_at')->nullable()->useCurrent()->index();
-            $table->timestamp('updated_at')->nullable()->useCurrent();
+            $table->timestamps();
 
             $table->index(['cod_proy', 'estado', 'fecha_solicitud'], 'idx_solicitudes_materiales_cod_proy_estado_fecha');
             $table->index(['numero_solicitud']);

@@ -39,11 +39,10 @@ class StockAlmacen extends Model
         return $this->belongsTo(Material::class, 'id_material', 'id_material');
     }
 
-    // Relación con lote - descomentar cuando exista el modelo LoteMaterial
-    // public function lote(): BelongsTo
-    // {
-    //     return $this->belongsTo(LoteMaterial::class, 'id_lote', 'id_lote');
-    // }
+    public function lote(): BelongsTo
+    {
+        return $this->belongsTo(LoteMaterial::class, 'id_lote', 'id_lote');
+    }
 
     // Accessors
     public function getCantidadDisponibleRealAttribute(): float
