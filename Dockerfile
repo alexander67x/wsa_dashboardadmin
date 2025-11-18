@@ -50,9 +50,9 @@ COPY --from=frontend /app/public/build ./public/build
 #######################################
 # PERMISSIONS
 #######################################
-RUN mkdir -p storage bootstrap/cache && \
-    chown -R www-data:www-data storage bootstrap/cache && \
-    chmod -R 775 storage/bootstrap/cache
+RUN mkdir -p storage bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache \
+    && chown -R www-data:www-data storage bootstrap/cache
 
 
 #######################################
