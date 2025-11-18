@@ -14,5 +14,9 @@ php artisan config:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
 
+echo "---- LARAVEL LOG ----"
+cat storage/logs/laravel.log || true
+echo "----------------------"
+
 echo "🚀 Iniciando Laravel..."
 exec php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
