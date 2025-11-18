@@ -9,6 +9,9 @@ php artisan storage:link || true
 # Migraciones (solo si la DB está accesible)
 php artisan migrate --force || true
 
+# Seeders (solo si la DB está accesible)
+php artisan db:seed --force || true
+
 # Limpiar caches
 php artisan config:clear || true
 php artisan route:clear || true
