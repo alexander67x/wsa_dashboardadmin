@@ -12,7 +12,7 @@ RUN npm run build
 
 
 ############################################
-# PHP-FPM BUILD
+# PHP-FPM BUILD (Laravel + Filament)
 ############################################
 FROM php:8.2-fpm-bullseye AS php
 
@@ -35,6 +35,7 @@ COPY . .
 
 RUN composer install --no-dev --optimize-autoloader --no-interaction
 
+# Copiar assets compilados
 COPY --from=frontend /app/public/build ./public/build
 
 RUN mkdir -p storage bootstrap/cache \
@@ -43,26 +44,30 @@ RUN mkdir -p storage bootstrap/cache \
 
 
 ############################################
-# FINAL IMAGE WITH PHP-FPM + NGINX + SUPERVISOR
+# FINAL IMAGE WITH CADDY + PHP-FPM
 ############################################
+FROM caddy:2-builder AS caddybuilder
+
+
 FROM debian:12-slim AS production
 
 RUN apt-get update && apt-get install -y \
-    nginx php8.2-fpm php8.2-mysql php8.2-xml php8.2-mbstring \
+    php8.2-fpm php8.2-mysql php8.2-xml php8.2-mbstring \
     php8.2-curl php8.2-zip php8.2-gd php8.2-intl php8.2-redis \
-    supervisor \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /var/www/html
 
-# Copia código y vendor desde build PHP
+# Copiar Laravel desde la imagen PHP
 COPY --from=php /var/www/html /var/www/html
 
-# Copia configuración nginx y supervisor
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-COPY supervisor.conf /etc/supervisor/conf.d/supervisor.conf
+# Copiar binarios de Caddy
+COPY --from=caddybuilder /usr/bin/caddy /usr/bin/caddy
 
-# Copia entrypoint
+# Copiar configuración Caddy
+COPY Caddyfile /etc/caddy/Caddyfile
+
+# Copiar entrypoint
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
