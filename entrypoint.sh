@@ -9,9 +9,6 @@ php artisan storage:link || true
 # Migraciones (solo si la DB está accesible)
 php artisan migrate --force || true
 
-# Forzar debug si se requiere ver errores (default true aquí; puedes override con APP_DEBUG=false)
-export APP_DEBUG=${APP_DEBUG:-true}
-
 # Limpiar caches
 php artisan config:clear || true
 php artisan route:clear || true
