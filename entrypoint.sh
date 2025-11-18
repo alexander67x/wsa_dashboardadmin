@@ -3,6 +3,8 @@ set -e
 
 echo "📌 Ejecutando comandos de inicialización..."
 
+php-fpm -D
+
 # Crear enlace a /storage (ignora error si ya existe)
 php artisan storage:link || true
 
@@ -14,10 +16,5 @@ php artisan config:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
 
-echo "---- LARAVEL LOG ----"
-cat storage/logs/laravel.log || true
-echo "----------------------"
-
-echo "🚀 Iniciando PHP-FPM + nginx..."
-php-fpm -D
+echo "🚀 Iniciando Nginx..."
 exec nginx -g "daemon off;"
