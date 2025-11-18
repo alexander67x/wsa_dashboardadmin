@@ -1,9 +1,7 @@
 #!/bin/sh
 set -e
 
-echo "📌 Ejecutando comandos de inicialización..."
-
-php-fpm -D
+echo "📌 Ejecutando tareas iniciales..."
 
 # Crear enlace a /storage (ignora error si ya existe)
 php artisan storage:link || true
@@ -16,5 +14,5 @@ php artisan config:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
 
-echo "🚀 Iniciando Nginx..."
-exec nginx -g "daemon off;"
+echo "🚀 Iniciando supervisord (php-fpm + nginx)..."
+exec /usr/bin/supervisord -n

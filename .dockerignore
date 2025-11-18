@@ -7,3 +7,5 @@ storage/framework/cache/*
 storage/framework/views/*
 .env
 npm-debug.log*
+.env.local
+*.log
