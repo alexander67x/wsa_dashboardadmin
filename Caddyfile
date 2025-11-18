@@ -1,8 +1,0 @@
-:8080 {
-    root * /var/www/html/public
-    encode gzip
-
-    php_fastcgi unix//run/php/php8.2-fpm.sock
-
-    file_server
-}
