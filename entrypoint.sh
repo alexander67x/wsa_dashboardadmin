@@ -3,7 +3,6 @@ set -e
 
 echo "⏳ Esperando a que la base de datos esté lista..."
 
-# Esperar hasta que MySQL responda
 max_retries=30
 counter=0
 
@@ -26,6 +25,11 @@ php artisan migrate --force || true
 php artisan config:clear || true
 php artisan route:clear || true
 php artisan view:clear || true
+
+echo "----------- LARAVEL LOG ------------"
+cat storage/logs/laravel.log || true
+echo "------------------------------------"
+
 
 echo "🚀 Iniciando supervisord (php-fpm + nginx)..."
 exec /usr/bin/supervisord -n
