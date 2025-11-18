@@ -18,5 +18,6 @@ echo "---- LARAVEL LOG ----"
 cat storage/logs/laravel.log || true
 echo "----------------------"
 
-echo "🚀 Iniciando Laravel..."
-exec php artisan serve --host=0.0.0.0 --port=${PORT:-8000}
+echo "🚀 Iniciando PHP-FPM + nginx..."
+php-fpm -D
+exec nginx -g "daemon off;"
