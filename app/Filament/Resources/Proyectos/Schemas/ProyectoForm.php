@@ -5,8 +5,8 @@ namespace App\Filament\Resources\Proyectos\Schemas;
 use App\Filament\Components\MapPicker;
 use App\Models\Cliente;
 use App\Models\Empleado;
-// ...existing imports...
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
@@ -27,47 +27,44 @@ class ProyectoForm
                     ->unique(ignoreRecord: true)
                     ->maxLength(255)
                     ->placeholder('Ej: PROY-2024-001'),
-                
+
                 Select::make('cod_cliente')
                     ->label('Cliente')
                     ->relationship('cliente', 'nombre_cliente')
                     ->searchable()
                     ->preload()
                     ->required(),
-                
+
                 // Campos para crear la ubicación integrada en proyectos
                 TextInput::make('nombre_ubicacion')
                     ->label('Nombre de la Ubicación')
                     ->required()
                     ->maxLength(255)
                     ->placeholder('Ej: Obra Residencial Miraflores'),
-                
+
                 Textarea::make('direccion')
                     ->label('Dirección de la Ubicación')
                     ->required()
                     ->rows(2)
                     ->placeholder('Dirección completa de la obra'),
-                
+
                 TextInput::make('ciudad')
                     ->label('Ciudad')
                     ->required()
                     ->maxLength(255)
                     ->default('La Paz'),
-                
+
                 TextInput::make('pais')
                     ->label('País')
                     ->required()
                     ->maxLength(255)
                     ->default('Bolivia'),
-                
 
-
-                    
                 // Mapa y coordenadas
                 MapPicker::make('coordenadas')
                     ->label('Ubicación en el Mapa')
                     ->columnSpanFull(),
-                
+
                 // Campos ocultos para latitud y longitud (se llenan automáticamente desde el mapa)
                 TextInput::make('latitud')
                     ->label('Latitud')
@@ -97,7 +94,6 @@ class ProyectoForm
                         }
                     }),
 
-
                 // Campo para asignar empleados al proyecto
                 Select::make('empleados')
                     ->label('Empleados Asignados')
@@ -106,7 +102,7 @@ class ProyectoForm
                     ->options(fn () => Empleado::orderBy('nombre_completo')->pluck('nombre_completo', 'cod_empleado')->toArray())
                     ->searchable()
                     ->columnSpanFull(),
-                
+
                 Select::make('responsable_proyecto')
                     ->label('Responsable del Proyecto')
                     ->relationship('responsable', 'nombre_completo')
@@ -121,20 +117,20 @@ class ProyectoForm
                     ->searchable()
                     ->preload()
                     ->extraAttributes(['class' => 'dropup-select']),
-                
+
                 DatePicker::make('fecha_inicio')
                     ->label('Fecha de Inicio')
                     ->required()
                     ->default(now()),
-                
+
                 DatePicker::make('fecha_fin_estimada')
                     ->label('Fecha Fin Estimada')
                     ->after('fecha_inicio'),
-                
+
                 DatePicker::make('fecha_fin_real')
                     ->label('Fecha Fin Real')
                     ->after('fecha_inicio'),
-                
+
                 Select::make('estado')
                     ->label('Estado del Proyecto')
                     ->options([
@@ -145,33 +141,44 @@ class ProyectoForm
                     ])
                     ->default('activo')
                     ->required(),
-                
+
                 Textarea::make('descripcion')
                     ->label('Descripción del Proyecto')
                     ->columnSpanFull()
                     ->rows(3),
-                
+
+                FileUpload::make('cotizaciones')
+                    ->label('Cotizaciones (Cloudinary)')
+                    ->multiple()
+                    ->disk('cloudinary')
+                    ->directory('proyectos/cotizaciones')
+                    ->preserveFilenames()
+                    ->openable()
+                    ->downloadable()
+                    ->dehydrated(false)
+                    ->columnSpanFull()
+                    ->helperText('Sube archivos de cotizaciones, se versionarán automáticamente (V1, V2, etc.).'),
+
                 // presupuesto_inicial eliminado: gestionado fuera o no aplicable
-                
+
                 TextInput::make('avance_financiero')
                     ->label('Avance Financiero')
                     ->numeric()
                     ->prefix('$')
                     ->step(0.01),
-                
+
                 TextInput::make('gasto_real')
                     ->label('Gasto Real')
                     ->numeric()
                     ->prefix('$')
                     ->step(0.01),
-                
+
                 TextInput::make('rentabilidad')
                     ->label('Rentabilidad (%)')
                     ->numeric()
                     ->suffix('%')
                     ->step(0.01),
-                
-                
             ]);
     }
 }
+

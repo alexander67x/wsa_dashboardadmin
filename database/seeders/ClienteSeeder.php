@@ -14,41 +14,42 @@ class ClienteSeeder extends Seeder
     public function run(): void
     {
         $cliente1 = Cliente::firstOrCreate(
-            ['email' => 'juan.perez@constructoraabc.com'],
+            ['email' => 'luis.herrera@bancouniversal.com'],
             [
-                'nombre_cliente' => 'Constructora ABC S.A.',
-                'industria' => 'Construcción',
-                'contacto_principal' => 'Juan Pérez',
+                'nombre_cliente' => 'Banco Universal S.A.',
+                'industria' => 'Banca y finanzas',
+                'contacto_principal' => 'Luis Herrera',
                 'telefono' => '+591-2-1234567',
-                'direccion' => 'Av. Principal #123, La Paz',
+                'direccion' => 'Av. Mariscal Santa Cruz #100, La Paz',
                 'activo' => true,
             ]
         );
 
         $cliente2 = Cliente::firstOrCreate(
-            ['email' => 'maria.gonzalez@inmobiliariaxyz.com'],
+            ['email' => 'carla.rojas@retailmax.com'],
             [
-                'nombre_cliente' => 'Inmobiliaria XYZ Ltda.',
-                'industria' => 'Inmobiliaria',
-                'contacto_principal' => 'María González',
+                'nombre_cliente' => 'RetailMax Supermercados',
+                'industria' => 'Retail y supermercados',
+                'contacto_principal' => 'Carla Rojas',
                 'telefono' => '+591-3-2345678',
-                'direccion' => 'Calle Comercio #456, Santa Cruz',
+                'direccion' => 'Av. Cristo Redentor #456, Santa Cruz',
                 'activo' => true,
             ]
         );
 
         $cliente3 = Cliente::firstOrCreate(
-            ['email' => 'carlos.rodriguez@desarrollosurbanos.com'],
+            ['email' => 'javier.flores@clinicasanmarcos.com'],
             [
-                'nombre_cliente' => 'Desarrollos Urbanos SRL',
-                'industria' => 'Desarrollo Urbano',
-                'contacto_principal' => 'Carlos Rodríguez',
+                'nombre_cliente' => 'Clínica San Marcos',
+                'industria' => 'Salud',
+                'contacto_principal' => 'Javier Flores',
                 'telefono' => '+591-4-3456789',
-                'direccion' => 'Plaza Principal #789, Cochabamba',
+                'direccion' => 'Av. Blanco Galindo #789, Cochabamba',
                 'activo' => true,
             ]
         );
 
-        $this->command->info("✅ Clientes creados/verificados: {$cliente1->nombre_cliente}, {$cliente2->nombre_cliente}, {$cliente3->nombre_cliente}");
+        $this->command->info("✔ Clientes creados/verificados: {$cliente1->nombre_cliente}, {$cliente2->nombre_cliente}, {$cliente3->nombre_cliente}");
     }
 }
+

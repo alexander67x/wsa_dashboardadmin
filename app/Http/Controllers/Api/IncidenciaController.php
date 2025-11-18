@@ -59,7 +59,7 @@ class IncidenciaController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
             'tipo' => ['required', Rule::in(['falla_equipos', 'accidente', 'retraso_material', 'problema_calidad', 'otro'])],
-            'severidad' => ['nullable', Rule::in(['critica', 'alta', 'media', 'baja']), 'default:media'],
+            'severidad' => ['nullable', Rule::in(['critica', 'alta', 'media', 'baja'])],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
             'images' => ['nullable', 'array'],
@@ -70,14 +70,16 @@ class IncidenciaController extends Controller
             'images.*.description' => ['nullable', 'string'],
         ]);
 
-        $incidencia = DB::transaction(function () use ($data) {
+        $severity = $data['severidad'] ?? 'media';
+
+        $incidencia = DB::transaction(function () use ($data, $severity) {
             $incidencia = Incidencia::create([
                 'cod_proy' => $data['projectId'],
                 'id_tarea' => $data['taskId'] ?? null,
                 'titulo' => $data['title'],
                 'descripcion' => $data['description'],
                 'tipo_incidencia' => $data['tipo'],
-                'severidad' => $data['severidad'] ?? 'media',
+                'severidad' => $severity,
                 'estado' => 'abierta',
                 'latitud' => $data['latitude'] ?? null,
                 'longitud' => $data['longitude'] ?? null,

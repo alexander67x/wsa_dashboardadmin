@@ -66,4 +66,3 @@ class StockAlmacenResource extends Resource
         return 'primary';
     }
 }
-

@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Almacenes;
 use App\Filament\Resources\Almacenes\Pages\CreateAlmacen;
 use App\Filament\Resources\Almacenes\Pages\EditAlmacen;
 use App\Filament\Resources\Almacenes\Pages\ListAlmacenes;
+use App\Filament\Resources\Almacenes\RelationManagers\StockRelationManager;
 use App\Filament\Resources\Almacenes\Schemas\AlmacenForm;
 use App\Filament\Resources\Almacenes\Tables\AlmacenesTable;
 use App\Models\Almacen;
@@ -43,7 +44,7 @@ class AlmacenResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            StockRelationManager::class,
         ];
     }
 
@@ -66,4 +67,3 @@ class AlmacenResource extends Resource
         return 'primary';
     }
 }
-

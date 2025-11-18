@@ -12,31 +12,6 @@
     >
         <div id="map-{{ $field->getStatePath() }}" class="w-full h-[500px] md:h-[600px] lg:h-[700px] xl:h-[800px] rounded-lg border border-gray-300 shadow-lg"></div>
         
-        <div class="mt-4 grid grid-cols-2 gap-4">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Latitud</label>
-                <input 
-                    type="number" 
-                    step="any"
-                    x-model="latitude"
-                    @input="updateMap()"
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                    placeholder="Latitud"
-                />
-            </div>
-            <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Longitud</label>
-                <input 
-                    type="number" 
-                    step="any"
-                    x-model="longitude"
-                    @input="updateMap()"
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500"
-                    placeholder="Longitud"
-                />
-            </div>
-        </div>
-        
         <!-- Hidden inputs to sync with Filament -->
         <input type="hidden" x-model="latitude" name="{{ $field->getStatePath() }}[latitude]" />
         <input type="hidden" x-model="longitude" name="{{ $field->getStatePath() }}[longitude]" />

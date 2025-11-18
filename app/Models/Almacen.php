@@ -46,6 +46,11 @@ class Almacen extends Model
         return $this->hasMany(Almacen::class, 'id_almacen_padre', 'id_almacen');
     }
 
+    public function stock(): HasMany
+    {
+        return $this->hasMany(StockAlmacen::class, 'id_almacen', 'id_almacen');
+    }
+
     public function proyecto(): BelongsTo
     {
         return $this->belongsTo(Proyecto::class, 'cod_proy', 'cod_proy');

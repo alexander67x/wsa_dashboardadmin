@@ -64,14 +64,23 @@ class AuthController extends Controller
 		]);
 
 		$token = $user->createToken('mobile')->plainTextToken;
+		$empleado = $user->empleado;
+		$role = $empleado?->role;
 
 		return response()->json([
 			'token' => $token,
-			'role' => 'worker',
+			'role' => $role?->nombre ?? 'worker',
 			'user' => [
 				'id' => (string) $user->id,
 				'name' => $user->name,
+				'employeeId' => $empleado?->cod_empleado ? (string) $empleado->cod_empleado : null,
 			],
+			'employee' => $empleado ? [
+				'id' => (string) $empleado->cod_empleado,
+				'name' => $empleado->nombre_completo,
+				'position' => $empleado->cargo,
+				'role' => $role?->nombre,
+			] : null,
 		]);
 	}
 
@@ -89,6 +98,12 @@ class AuthController extends Controller
 				'nombre' => $role->nombre,
 				'descripcion' => $role->descripcion,
 			] : null,
+			'employeeId' => $empleado?->cod_empleado ? (string) $empleado->cod_empleado : null,
+			'employee' => $empleado ? [
+				'id' => (string) $empleado->cod_empleado,
+				'name' => $empleado->nombre_completo,
+				'position' => $empleado->cargo,
+			] : null,
 		];
 	}
 
@@ -98,5 +113,4 @@ class AuthController extends Controller
 		return response()->noContent();
 	}
 }
-
 

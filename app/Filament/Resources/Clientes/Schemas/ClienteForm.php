@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Clientes\Schemas;
 
+use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
@@ -24,6 +25,17 @@ class ClienteForm
                     ->tel(),
                 Textarea::make('direccion')
                     ->columnSpanFull(),
+                FileUpload::make('documentos')
+                    ->label('Documentos del cliente')
+                    ->multiple()
+                    ->disk('public')
+                    ->directory('clientes/documentos')
+                    ->preserveFilenames()
+                    ->openable()
+                    ->downloadable()
+                    ->dehydrated(false)
+                    ->columnSpanFull()
+                    ->helperText('Anexa contratos, NIT/RUC, certificados, etc.'),
                 Toggle::make('activo')
                     ->required(),
             ]);

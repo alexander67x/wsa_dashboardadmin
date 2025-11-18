@@ -241,6 +241,63 @@ class SolicitudForm
                         return implode("\n\n", $lista);
                     })
                     ->rows(10),
+
+                // Trazabilidad de entregas
+                Textarea::make('entregas_list')
+                    ->label('Entregas de Material')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->columnSpanFull()
+                    ->visible(fn ($record) => $record && $record->deliveries && $record->deliveries->isNotEmpty())
+                    ->formatStateUsing(function ($state, $record) {
+                        if (! $record) {
+                            return 'No hay entregas registradas';
+                        }
+
+                        $record->loadMissing('deliveries.material', 'deliveries.entregadoPor', 'deliveries.recibidoPor');
+
+                        if (! $record->deliveries || $record->deliveries->isEmpty()) {
+                            return 'No hay entregas registradas';
+                        }
+
+                        $lista = [];
+
+                        foreach ($record->deliveries as $delivery) {
+                            $fecha = $delivery->fecha_entrega
+                                ? $delivery->fecha_entrega->format('d/m/Y H:i')
+                                : '-';
+
+                            $material = $delivery->material;
+                            $nombreMaterial = $material ? $material->nombre_producto : "Material ID: {$delivery->id_material}";
+
+                            $cantidad = number_format((float) $delivery->cantidad_entregada, 2);
+                            $estadoEntrega = $delivery->estado ?? 'sin estado';
+
+                            $entregadoPor = $delivery->entregadoPor?->nombre_completo;
+                            $recibidoPor = $delivery->recibidoPor?->nombre_completo;
+
+                            $linea = "● {$fecha} - {$nombreMaterial}";
+                            $linea .= "\n  - Cantidad entregada: {$cantidad}";
+                            $linea .= "\n  - Estado entrega: {$estadoEntrega}";
+
+                            if ($entregadoPor) {
+                                $linea .= "\n  - Registrado por: {$entregadoPor}";
+                            }
+
+                            if ($recibidoPor) {
+                                $linea .= "\n  - Recibido por: {$recibidoPor}";
+                            }
+
+                            if ($delivery->observaciones) {
+                                $linea .= "\n  - Observaciones: {$delivery->observaciones}";
+                            }
+
+                            $lista[] = $linea;
+                        }
+
+                        return implode("\n\n", $lista);
+                    })
+                    ->rows(8),
                 
                 // Información de Aprobación
                 TextInput::make('aprobada_por_nombre')
@@ -277,4 +334,3 @@ class SolicitudForm
             ]);
     }
 }
-

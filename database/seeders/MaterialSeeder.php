@@ -254,6 +254,7 @@ class MaterialSeeder extends Seeder
                             'id_material' => $material->id_material,
                         ],
                         [
+                            'created_at' => Carbon::now(),
                             'cantidad_disponible' => $stockInicial,
                             'cantidad_reservada' => 0,
                             'cantidad_minima_alerta' => $material->stock_minimo,
@@ -274,4 +275,3 @@ class MaterialSeeder extends Seeder
         $this->command->info("✅ {$materialesCreados} materiales creados/verificados con asignación a almacenes");
     }
 }
-
