@@ -12,6 +12,7 @@ RUN apt-get update && \
     pecl install redis && docker-php-ext-enable redis && \
     rm -rf /var/lib/apt/lists/*
 
+
 FROM node:20-bullseye AS frontend
 WORKDIR /app
 COPY package*.json ./
@@ -19,18 +20,18 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
+
 FROM base AS app
 WORKDIR /var/www/html
 
-# Composer desde imagen oficial para evitar descargarlo manualmente
+# Composer desde imagen oficial
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Instalar dependencias PHP (usa caché de capas)
-COPY composer.json composer.lock ./
-RUN composer install --no-dev --optimize-autoloader --no-interaction
-
-# Copiar el resto del código
+# Copiar TODO el código antes de instalar dependencias
 COPY . .
+
+# Instalar dependencias PHP (usa artisan ahora sí existe)
+RUN composer install --no-dev --optimize-autoloader --no-interaction
 
 # Copiar assets compilados
 COPY --from=frontend /app/public/build ./public/build
