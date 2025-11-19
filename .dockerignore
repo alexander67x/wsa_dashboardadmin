@@ -1,11 +1,10 @@
 .git
-.gitignore
 node_modules
 vendor
-storage/logs/*
-storage/framework/cache/*
-storage/framework/views/*
+storage/*.sqlite
+storage/app/public
+public/storage
+public/build
 .env
+.env.*
 npm-debug.log*
-.env.local
-*.log
