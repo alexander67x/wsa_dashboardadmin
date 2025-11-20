@@ -2,28 +2,28 @@
 
 namespace App\Filament\Resources\Clientes\Pages;
 
+use App\Filament\Concerns\HandlesArchivoUploads;
 use App\Filament\Resources\Clientes\ClienteResource;
-use App\Models\Archivo;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateCliente extends CreateRecord
 {
-    protected static string $resource = ClienteResource::class;
+    use HandlesArchivoUploads;
 
-    protected ?array $documentosSubidos = null;
+    protected static string $resource = ClienteResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
-        $this->documentosSubidos = $data['documentos'] ?? null;
-
-        unset($data['documentos']);
+        $this->captureUploadedFiles('documentos');
 
         return $data;
     }
 
     protected function afterCreate(): void
     {
-        if (empty($this->documentosSubidos)) {
+        $documentos = $this->pullUploadedFiles('documentos');
+
+        if (empty($documentos)) {
             return;
         }
 
@@ -32,18 +32,11 @@ class CreateCliente extends CreateRecord
         $empleado = $user?->empleado;
         $creadoPor = $empleado?->cod_empleado ?? 0;
 
-        foreach ($this->documentosSubidos as $path) {
-            Archivo::create([
-                'entidad' => 'clientes',
-                'entidad_id' => $record->cod_cliente,
-                'nombre_original' => basename($path),
-                'ruta_storage' => $path,
-                'tipo_mime' => null,
-                'tamano_bytes' => null,
-                'es_foto' => false,
-                'es_evidencia_principal' => false,
-                'creado_por' => $creadoPor,
-            ]);
-        }
+        $this->storeArchivos($documentos, [
+            'entidad' => 'clientes',
+            'entidad_id' => $record->cod_cliente,
+            'creado_por' => $creadoPor,
+            'folder' => 'clientes/documentos',
+        ]);
     }
 }

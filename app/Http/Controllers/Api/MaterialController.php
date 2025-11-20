@@ -10,6 +10,7 @@ use App\Models\SolicitudItem;
 use App\Models\Empleado;
 use App\Models\MaterialDelivery;
 use App\Models\SolicitudHistorial;
+use App\Services\OneSignalService;
 use Illuminate\Support\Facades\DB;
 
 class MaterialController extends Controller
@@ -85,7 +86,7 @@ class MaterialController extends Controller
 				'numeroSolicitud' => $solicitud->numero_solicitud,
 				'proyecto' => [
 					'id' => $solicitud->cod_proy,
-					'nombre' => $solicitud->proyecto->nombre_proyecto ?? null,
+					'nombre' => $solicitud->proyecto?->nombre_proyecto,
 				],
 				'solicitadoPor' => [
 					'id' => (string) $solicitud->solicitado_por,
@@ -121,7 +122,7 @@ class MaterialController extends Controller
 			'numeroSolicitud' => $solicitud->numero_solicitud,
 			'proyecto' => [
 				'id' => $solicitud->cod_proy,
-				'nombre' => $solicitud->proyecto->nombre_proyecto ?? null,
+				'nombre' => $solicitud->proyecto?->nombre_proyecto,
 			],
 			'solicitadoPor' => [
 				'id' => (string) $solicitud->solicitado_por,
@@ -555,14 +556,17 @@ class MaterialController extends Controller
 					throw new \Exception("La cantidad entregada ({$nuevaCantidadEntregada}) excede la cantidad aprobada ({$cantidadAprobada}) para el material {$item->material->nombre_producto}");
 				}
 
+				$observacionesEntrega = $delivery['observations'] ?? null;
+
 				// Determinar tipo de entrega
 				$tipoEntrega = $delivery['quantity'] >= $cantidadAprobada ? 'completa' : 'parcial';
-				$motivoParcial = $tipoEntrega === 'parcial' ? ($delivery['observations'] ?? 'Entrega parcial') : null;
+				$motivoParcial = $tipoEntrega === 'parcial' ? ($observacionesEntrega ?? 'Entrega parcial') : null;
 
-				// Manejar lote si se proporciona
-				$loteId = $delivery['lotId'] ?? null;
-				
-				if (!$loteId && !empty($delivery['lotNumber'])) {
+				// Manejar lote destino si se proporciona
+				$loteDestinoId = $delivery['lotId'] ?? null;
+				$origenLoteId = null;
+
+				if (!$loteDestinoId && !empty($delivery['lotNumber'])) {
 					// Crear nuevo lote si se proporciona número de lote
 					$lote = \App\Models\LoteMaterial::create([
 						'id_material' => $item->id_material,
@@ -570,22 +574,33 @@ class MaterialController extends Controller
 						'fecha_ingreso' => now(),
 						'estado_lote' => 'disponible',
 					]);
-					$loteId = $lote->id_lote;
+					$loteDestinoId = $lote->id_lote;
 					$lotesCreados[] = $lote;
 				}
 
 				// Verificar stock disponible en almacén origen
-				$stockOrigen = \App\Models\StockAlmacen::where('id_almacen', $almacenOrigen->id_almacen)
-					->where('id_material', $item->id_material)
-					->when($loteId, function ($query) use ($loteId) {
-						return $query->where('id_lote', $loteId);
-					}, function ($query) {
-						return $query->whereNull('id_lote');
-					})
-					->first();
+				$lotIdFromPayload = $delivery['lotId'] ?? null;
 
-				if (!$stockOrigen || ($stockOrigen->cantidad_disponible - $stockOrigen->cantidad_reservada) < $delivery['quantity']) {
-					throw new \Exception("No hay stock suficiente en el almacén origen para el material {$item->material->nombre_producto}. Disponible: " . ($stockOrigen ? ($stockOrigen->cantidad_disponible - $stockOrigen->cantidad_reservada) : 0));
+				$stockOrigenQuery = \App\Models\StockAlmacen::where('id_almacen', $almacenOrigen->id_almacen)
+					->where('id_material', $item->id_material)
+					->when($lotIdFromPayload, function ($query) use ($lotIdFromPayload) {
+						return $query->where('id_lote', $lotIdFromPayload);
+					})
+					->orderByDesc('cantidad_disponible');
+
+				$stockOrigen = $stockOrigenQuery->first();
+
+				$disponible = $stockOrigen ? ($stockOrigen->cantidad_disponible - $stockOrigen->cantidad_reservada) : 0;
+
+				if (!$stockOrigen || $disponible < $delivery['quantity']) {
+					throw new \Exception("No hay stock suficiente en el almacén origen para el material {$item->material->nombre_producto}. Disponible: " . $disponible);
+				}
+
+				$origenLoteId = $stockOrigen->id_lote;
+
+				// Si no se especificó lote destino, usar el lote real del stock origen
+				if (!$loteDestinoId) {
+					$loteDestinoId = $origenLoteId;
 				}
 
 				// Disminuir stock en almacén origen
@@ -594,8 +609,8 @@ class MaterialController extends Controller
 				// Aumentar stock en almacén destino
 				$stockDestino = \App\Models\StockAlmacen::where('id_almacen', $almacenDestino->id_almacen)
 					->where('id_material', $item->id_material)
-					->when($loteId, function ($query) use ($loteId) {
-						return $query->where('id_lote', $loteId);
+					->when($loteDestinoId, function ($query) use ($loteDestinoId) {
+						return $query->where('id_lote', $loteDestinoId);
 					}, function ($query) {
 						return $query->whereNull('id_lote');
 					})
@@ -608,7 +623,7 @@ class MaterialController extends Controller
 					\App\Models\StockAlmacen::create([
 						'id_almacen' => $almacenDestino->id_almacen,
 						'id_material' => $item->id_material,
-						'id_lote' => $loteId,
+						'id_lote' => $loteDestinoId,
 						'cantidad_disponible' => $delivery['quantity'],
 						'cantidad_reservada' => 0,
 						'cantidad_minima_alerta' => $item->material->stock_minimo ?? 0,
@@ -626,7 +641,7 @@ class MaterialController extends Controller
 					'id_solicitud' => $solicitud->id_solicitud,
 					'id_item' => $item->id_item,
 					'id_material' => $item->id_material,
-					'id_lote' => $loteId,
+					'id_lote' => $loteDestinoId,
 					'id_almacen_origen' => $almacenOrigen->id_almacen,
 					'id_almacen_destino' => $almacenDestino->id_almacen,
 					'cantidad_entregada' => $delivery['quantity'],
@@ -636,7 +651,7 @@ class MaterialController extends Controller
 					'fecha_entrega' => now(),
 					'entregado_por' => $empleado->cod_empleado,
 					'recibido_por' => null, // Se actualizará cuando se reciba
-					'observaciones' => $delivery['observations'] ?? null,
+					'observaciones' => $observacionesEntrega,
 					'estado' => 'en_transito',
 					'fecha_recepcion' => null,
 				]);
@@ -647,7 +662,7 @@ class MaterialController extends Controller
 				DB::table('movimientos_inventario')->insert([
 					'numero_movimiento' => 'MOV-' . now()->format('YmdHis') . '-' . rand(1000, 9999),
 					'id_material' => $item->id_material,
-					'id_lote' => $loteId,
+					'id_lote' => $origenLoteId,
 					'id_almacen_origen' => $almacenOrigen->id_almacen,
 					'id_almacen_destino' => $almacenDestino->id_almacen,
 					'tipo_movimiento' => 'transferencia',
@@ -662,9 +677,9 @@ class MaterialController extends Controller
 				// Actualizar cantidad entregada del item
 				$item->update([
 					'cantidad_entregada' => $nuevaCantidadEntregada,
-					'id_lote' => $loteId ?? $item->id_lote,
-					'observaciones' => $delivery['observations'] 
-						? ($item->observaciones ? $item->observaciones . "\n\nEntrega {$numeroEntrega}: " . $delivery['observations'] : "Entrega {$numeroEntrega}: " . $delivery['observations'])
+					'id_lote' => $loteDestinoId ?? $item->id_lote,
+					'observaciones' => $observacionesEntrega 
+						? ($item->observaciones ? $item->observaciones . "\n\nEntrega {$numeroEntrega}: " . $observacionesEntrega : "Entrega {$numeroEntrega}: " . $observacionesEntrega)
 						: $item->observaciones,
 				]);
 
@@ -700,6 +715,20 @@ class MaterialController extends Controller
 
 			DB::commit();
 
+			// Notificación push/web
+			try {
+				$oneSignal = app(OneSignalService::class);
+				$oneSignal->sendNotification(
+					heading: 'Entrega registrada',
+					content: "Se registró una entrega para la solicitud {$solicitud->numero_solicitud}.",
+					url: route('filament.admin.resources.solicitudes-materiales.solicitud-materials.view', $solicitud),
+				);
+			} catch (\Throwable $notificationException) {
+				\Log::warning('Entrega notificada parcialmente', [
+					'message' => $notificationException->getMessage(),
+				]);
+			}
+
 			return response()->json([
 				'message' => 'Despacho registrado exitosamente',
 				'solicitudId' => (string) $solicitud->id_solicitud,
@@ -726,7 +755,7 @@ class MaterialController extends Controller
 		} catch (\Exception $e) {
 			DB::rollBack();
 			return response()->json([
-				'message' => 'Error al registrar la entrega',
+				'message' => 'Error al registrar la entrega: ' . $e->getMessage(),
 				'error' => $e->getMessage()
 			], 500);
 		}
@@ -775,5 +804,3 @@ class MaterialController extends Controller
 		return $descripciones[$tipoEvento] ?? "Evento {$tipoEvento} en solicitud {$solicitud->numero_solicitud}";
 	}
 }
-
-

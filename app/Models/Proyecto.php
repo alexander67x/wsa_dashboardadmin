@@ -100,6 +100,11 @@ class Proyecto extends Model
         return $this->hasMany(Tarea::class, 'cod_proy', 'cod_proy');
     }
 
+    public function hitos(): HasMany
+    {
+        return $this->hasMany(Hito::class, 'cod_proy', 'cod_proy');
+    }
+
     // Accessors para campos virtuales
     // Accessors/Mutators removed: ubicacion now mapped directly to proyectos table columns
 

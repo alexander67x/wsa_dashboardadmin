@@ -19,6 +19,7 @@ class Tarea extends Model
     protected $fillable = [
         'cod_proy',
         'id_fase',
+        'id_hito',
         'parent_id',
         'titulo',
         'descripcion',
@@ -55,6 +56,11 @@ class Tarea extends Model
     public function subtareas(): HasMany
     {
         return $this->hasMany(Tarea::class, 'parent_id', 'id_tarea');
+    }
+
+    public function hito(): BelongsTo
+    {
+        return $this->belongsTo(Hito::class, 'id_hito', 'id_hito');
     }
 
     public function column(): BelongsTo

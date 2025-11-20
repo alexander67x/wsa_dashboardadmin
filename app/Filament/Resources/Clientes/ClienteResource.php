@@ -7,6 +7,7 @@ use App\Filament\Resources\Clientes\Pages\EditCliente;
 use App\Filament\Resources\Clientes\Pages\ListClientes;
 use App\Filament\Resources\Clientes\Schemas\ClienteForm;
 use App\Filament\Resources\Clientes\Tables\ClientesTable;
+use App\Filament\Resources\Clientes\RelationManagers\ArchivosRelationManager;
 use App\Models\Cliente;
 use BackedEnum;
 use Filament\Resources\Resource;
@@ -45,7 +46,7 @@ class ClienteResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ArchivosRelationManager::class,
         ];
     }
 

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Proyectos\Pages;
 
+use App\Filament\Concerns\HandlesArchivoUploads;
 use App\Filament\Resources\Proyectos\ProyectoResource;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
@@ -11,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class EditProyecto extends EditRecord
 {
+    use HandlesArchivoUploads;
+
     protected static string $resource = ProyectoResource::class;
 
     protected function getHeaderActions(): array
@@ -24,6 +27,8 @@ class EditProyecto extends EditRecord
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $this->captureUploadedFiles('cotizaciones');
+
         if (!empty($data['coordenadas']) && is_array($data['coordenadas'])) {
             $data['latitud'] = $data['coordenadas']['latitude'] ?? $data['latitud'] ?? null;
             $data['longitud'] = $data['coordenadas']['longitude'] ?? $data['longitud'] ?? null;
@@ -55,6 +60,21 @@ class EditProyecto extends EditRecord
             }
 
             $this->record->empleados()->sync($syncData);
+        }
+
+        $cotizaciones = $this->pullUploadedFiles('cotizaciones');
+
+        if (! empty($cotizaciones) && $this->record instanceof Model) {
+            $user = auth()->user();
+            $empleado = $user?->empleado;
+            $creadoPor = $empleado?->cod_empleado ?? 0;
+
+            $this->storeArchivos($cotizaciones, [
+                'entidad' => 'proyectos',
+                'entidad_id' => $this->record->getKey(),
+                'creado_por' => $creadoPor,
+                'folder' => 'proyectos/cotizaciones',
+            ]);
         }
     }
 }

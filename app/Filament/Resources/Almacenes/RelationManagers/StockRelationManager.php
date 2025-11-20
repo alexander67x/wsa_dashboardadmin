@@ -7,6 +7,9 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Components\Select;
 use Filament\Schemas\Components\TextInput;
 use Filament\Schemas\Schema;
+use Filament\Actions\CreateAction;
+use Filament\Actions\DeleteAction;
+use Filament\Actions\EditAction;
 use Filament\Tables;
 
 class StockRelationManager extends RelationManager
@@ -62,12 +65,11 @@ class StockRelationManager extends RelationManager
                     ->sortable(),
             ])
             ->headerActions([
-                Tables\Actions\CreateAction::make(),
+                CreateAction::make(),
             ])
             ->actions([
-                Tables\Actions\EditAction::make(),
-                Tables\Actions\DeleteAction::make(),
+                EditAction::make(),
+                DeleteAction::make(),
             ]);
     }
 }
-

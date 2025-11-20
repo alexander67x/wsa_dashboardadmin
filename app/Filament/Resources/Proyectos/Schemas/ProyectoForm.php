@@ -148,9 +148,9 @@ class ProyectoForm
                     ->rows(3),
 
                 FileUpload::make('cotizaciones')
-                    ->label('Cotizaciones (Cloudinary)')
+                    ->label('Cotizaciones del proyecto')
                     ->multiple()
-                    ->disk('cloudinary')
+                    ->disk('public')
                     ->directory('proyectos/cotizaciones')
                     ->preserveFilenames()
                     ->openable()
@@ -181,4 +181,3 @@ class ProyectoForm
             ]);
     }
 }
-

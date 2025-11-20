@@ -7,6 +7,8 @@ use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
 use Illuminate\Support\Facades\Route;
+use Symfony\Component\HttpKernel\Exception\HttpExceptionInterface;
+use Throwable;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
@@ -42,5 +44,23 @@ return Application::configure(basePath: dirname(__DIR__))
             }
 
             return response()->json(['message' => 'Unauthenticated.'], 401);
+        });
+
+        $exceptions->render(function (Throwable $exception, $request) {
+            if (! ($request->is('api/*') || $request->expectsJson())) {
+                return null;
+            }
+
+            $status = $exception instanceof HttpExceptionInterface
+                ? $exception->getStatusCode()
+                : 500;
+
+            return response()->json([
+                'message' => $status === 500
+                    ? 'Ocurrió un error inesperado al procesar la solicitud.'
+                    : $exception->getMessage(),
+                'error' => $exception->getMessage(),
+                'exception' => class_basename($exception::class),
+            ], $status);
         });
     })->create();

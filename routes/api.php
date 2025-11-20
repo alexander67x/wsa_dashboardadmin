@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\IncidenciaController;
 use App\Http\Controllers\Api\MaterialController;
 use App\Http\Controllers\Api\KanbanController;
+use App\Http\Controllers\Api\PushController;
 use App\Http\Controllers\Api\TaskController;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
@@ -52,6 +53,8 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::post('/kanban/columns', [KanbanController::class, 'addColumn']);
 	Route::post('/kanban/cards', [KanbanController::class, 'addCard']);
 	Route::get('/kanban/cards/{id}', [KanbanController::class, 'showCard']);
-});
 
+	// Push notifications
+	Route::post('/push/register', [PushController::class, 'register']);
+});
 

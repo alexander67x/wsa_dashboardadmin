@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Almacenes\Schemas;
 
+use App\Filament\Components\MapPicker;
 use App\Models\Almacen;
 use App\Models\Empleado;
 use App\Models\Proyecto;
@@ -99,17 +100,33 @@ class AlmacenForm
                     ->default('Bolivia')
                     ->columnSpan(1),
 
+                MapPicker::make('coordenadas')
+                    ->label('Ubicación en el Mapa')
+                    ->columnSpanFull(),
+
                 TextInput::make('latitud')
                     ->label('Latitud')
                     ->numeric()
                     ->step(0.0000001)
-                    ->columnSpan(1),
+                    ->hidden()
+                    ->live()
+                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                        $coordenadas = $get('coordenadas') ?? [];
+                        $coordenadas['latitude'] = $state;
+                        $set('coordenadas', $coordenadas);
+                    }),
 
                 TextInput::make('longitud')
                     ->label('Longitud')
                     ->numeric()
                     ->step(0.0000001)
-                    ->columnSpan(1),
+                    ->hidden()
+                    ->live()
+                    ->afterStateUpdated(function (Get $get, Set $set, $state) {
+                        $coordenadas = $get('coordenadas') ?? [];
+                        $coordenadas['longitude'] = $state;
+                        $set('coordenadas', $coordenadas);
+                    }),
 
                 Select::make('tipo_ubicacion')
                     ->label('Tipo de Ubicación')

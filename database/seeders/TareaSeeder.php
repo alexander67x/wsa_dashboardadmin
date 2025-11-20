@@ -3,6 +3,7 @@
 namespace Database\Seeders;
 
 use App\Models\Proyecto;
+use App\Models\Hito;
 use App\Models\Tarea;
 use App\Models\Empleado;
 use Illuminate\Database\Seeder;
@@ -53,17 +54,28 @@ class TareaSeeder extends Seeder
         $prioridades = ['baja', 'media', 'alta'];
         
         foreach ($proyectos as $proyecto) {
-            $numTareas = rand(5, 15);
+            $hitos = Hito::where('cod_proy', $proyecto->cod_proy)
+                ->orderBy('fecha_hito')
+                ->get();
+
+            if ($hitos->isEmpty()) {
+                $this->command->warn("El proyecto {$proyecto->cod_proy} no tiene hitos. Ejecuta HitoSeeder antes de TareaSeeder.");
+                continue;
+            }
+
+            $numTareas = rand(6, 12);
             
             for ($i = 1; $i <= $numTareas; $i++) {
-                $fechaInicio = Carbon::now()->subDays(rand(0, 30));
-                $fechaFin = (clone $fechaInicio)->addDays(rand(1, 30));
+                $hito = $hitos[($i - 1) % $hitos->count()];
+                $fechaInicio = Carbon::parse($hito->fecha_hito)->addDays(rand(0, 2));
+                $fechaFin = (clone $fechaInicio)->addDays(rand(1, 5));
                 $estado = $estados[array_rand($estados)];
                 $prioridad = $prioridades[array_rand($prioridades)];
                 $responsable = $empleados->random();
                 
                 Tarea::create([
                     'cod_proy' => $proyecto->cod_proy,
+                    'id_hito' => $hito->id_hito,
                     'titulo' => 'Tarea ' . $i . ' - ' . $proyecto->nombre_ubicacion,
                     'descripcion' => 'Descripción detallada de la tarea ' . $i . ' para el proyecto ' . $proyecto->nombre_ubicacion,
                     'estado' => $estado,
@@ -75,6 +87,24 @@ class TareaSeeder extends Seeder
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),
                 ]);
+            }
+        }
+
+        // Asignar hitos a tareas existentes sin relación
+        foreach ($proyectos as $proyecto) {
+            $hitos = Hito::where('cod_proy', $proyecto->cod_proy)->get();
+
+            if ($hitos->isEmpty()) {
+                continue;
+            }
+
+            $tareasSinHito = Tarea::where('cod_proy', $proyecto->cod_proy)
+                ->whereNull('id_hito')
+                ->get();
+
+            foreach ($tareasSinHito as $index => $tarea) {
+                $hito = $hitos[$index % $hitos->count()];
+                $tarea->update(['id_hito' => $hito->id_hito]);
             }
         }
         

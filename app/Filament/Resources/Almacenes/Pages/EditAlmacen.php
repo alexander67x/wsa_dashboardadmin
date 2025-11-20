@@ -17,6 +17,16 @@ class EditAlmacen extends EditRecord
         ];
     }
 
+    protected function mutateFormDataBeforeFill(array $data): array
+    {
+        $data['coordenadas'] = [
+            'latitude' => $data['latitud'] ?? -16.2902,
+            'longitude' => $data['longitud'] ?? -63.5887,
+        ];
+
+        return $data;
+    }
+
     protected function mutateFormDataBeforeSave(array $data): array
     {
         // Si es almacén central, limpiar campos relacionados
@@ -30,7 +40,13 @@ class EditAlmacen extends EditRecord
             $data['cod_proy'] = null;
         }
 
+        if (! empty($data['coordenadas']) && is_array($data['coordenadas'])) {
+            $data['latitud'] = $data['coordenadas']['latitude'] ?? $data['latitud'] ?? null;
+            $data['longitud'] = $data['coordenadas']['longitude'] ?? $data['longitud'] ?? null;
+        }
+
+        unset($data['coordenadas']);
+
         return $data;
     }
 }
-

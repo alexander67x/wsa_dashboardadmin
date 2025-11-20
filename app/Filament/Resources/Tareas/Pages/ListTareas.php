@@ -33,7 +33,7 @@ class ListTareas extends ListRecords
     protected function getHeaderActions(): array
     {
         $codProy = $this->selectedProyecto ?? request()->get('tableFilters')['cod_proy']['value'] ?? null;
-        
+
         return [
             CreateAction::make()
                 ->label('Nueva Tarea')
@@ -43,9 +43,7 @@ class ListTareas extends ListRecords
                         $url .= '?cod_proy=' . $codProy;
                     }
                     return $url;
-                })
-                ->disabled(!$codProy)
-                ->tooltip($codProy ? 'Crear nueva tarea para el proyecto seleccionado' : 'Primero selecciona un proyecto'),
+                }),
         ];
     }
 

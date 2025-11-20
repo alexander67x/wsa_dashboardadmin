@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Tareas\Schemas;
 
-use App\Models\Empleado;
 use App\Models\Proyecto;
+use App\Models\Hito;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -28,7 +28,7 @@ class TareaForm
                         ->toArray())
                     ->searchable()
                     ->preload()
-                    ->required()
+                    ->nullable()
                     ->default(fn () => request()->get('cod_proy'))
                     ->disabled(fn () => request()->has('cod_proy'))
                     ->dehydrated()
@@ -36,7 +36,35 @@ class TareaForm
                     ->afterStateUpdated(function (Set $set, $state) {
                         // Limpiar responsable si cambia el proyecto
                         $set('responsable_id', null);
+                        $set('id_hito', null);
                     }),
+
+                Select::make('id_hito')
+                    ->label('Hito semanal')
+                    ->options(function (Get $get) {
+                        $codProy = $get('cod_proy');
+                        if (! $codProy) {
+                            return [];
+                        }
+
+                        return Hito::query()
+                            ->where('cod_proy', $codProy)
+                            ->orderBy('fecha_hito')
+                            ->get()
+                            ->mapWithKeys(function ($hito) {
+                                $inicio = optional($hito->fecha_hito)->format('d/m');
+                                $fin = optional($hito->fecha_final_hito)->format('d/m');
+
+                                return [
+                                    $hito->id_hito => "{$hito->titulo} — {$inicio} al {$fin}",
+                                ];
+                            })
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->helperText('Los hitos se cargan automáticamente al seleccionar un proyecto.')
+                    ->placeholder('Sin hito asignado'),
 
                 TextInput::make('titulo')
                     ->label('Título de la Tarea')
@@ -95,17 +123,13 @@ class TareaForm
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->disabled(fn (Get $get) => !$get('cod_proy'))
-                    ->helperText(fn (Get $get) => !$get('cod_proy') 
-                        ? 'Primero selecciona un proyecto' 
-                        : 'Solo se muestran empleados asignados al proyecto'),
+                    ->helperText('Solo se listan empleados asignados al proyecto seleccionado.'),
 
                 Select::make('supervisor_asignado')
                     ->label('Supervisor')
                     ->relationship('supervisor', 'nombre_completo')
                     ->searchable()
-                    ->preload()
-                    ->disabled(fn (Get $get) => !$get('cod_proy')),
+                    ->preload(),
 
                 DatePicker::make('fecha_inicio')
                     ->label('Fecha de Inicio')
@@ -132,4 +156,3 @@ class TareaForm
             ->columns(2);
     }
 }
-

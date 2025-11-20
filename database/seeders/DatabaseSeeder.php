@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             ClienteSeeder::class,           // Clientes
             EmpleadoSeeder::class,          // Empleados
             ProyectoSeeder::class,          // Proyectos
+            HitoSeeder::class,              // Hitos semanales
             AlmacenSeeder::class,           // Almacenes
             MaterialGrupoSeeder::class,     // Grupos de materiales
             MaterialSubgrupoSeeder::class,  // Subgrupos de materiales
@@ -31,4 +32,3 @@ class DatabaseSeeder extends Seeder
         ]);
     }
 }
-

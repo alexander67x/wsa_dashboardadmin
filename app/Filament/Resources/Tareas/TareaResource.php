@@ -23,13 +23,13 @@ class TareaResource extends Resource
 
     protected static ?string $recordTitleAttribute = 'titulo';
 
-    protected static ?string $navigationLabel = 'Planificación';
+    protected static ?string $navigationLabel = 'Tareas';
 
     protected static ?string $modelLabel = 'Tarea';
 
     protected static ?string $pluralModelLabel = 'Tareas';
 
-    protected static ?int $navigationSort = 4;
+    protected static ?int $navigationSort = 5;
 
     public static function form(Schema $schema): Schema
     {
@@ -65,4 +65,3 @@ class TareaResource extends Resource
             ]);
     }
 }
-

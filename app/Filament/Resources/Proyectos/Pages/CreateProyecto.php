@@ -2,20 +2,21 @@
 
 namespace App\Filament\Resources\Proyectos\Pages;
 
+use App\Filament\Concerns\HandlesArchivoUploads;
 use App\Filament\Resources\Proyectos\ProyectoResource;
 use Filament\Resources\Pages\CreateRecord;
-use Illuminate\Support\Str;
-
-use Illuminate\Support\Arr;
-
 use Illuminate\Database\Eloquent\Model;
 
 class CreateProyecto extends CreateRecord
 {
+    use HandlesArchivoUploads;
+
     protected static string $resource = ProyectoResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
     {
+        $this->captureUploadedFiles('cotizaciones');
+
         // Mapear coordenadas del MapPicker al esquema de la tabla proyectos
         if (!empty($data['coordenadas']) && is_array($data['coordenadas'])) {
             $data['latitud'] = $data['coordenadas']['latitude'] ?? $data['latitud'] ?? null;
@@ -33,7 +34,6 @@ class CreateProyecto extends CreateRecord
 
     protected function afterCreate(): void
     {
-        // sincronizar empleados si vienen en el formulario
         $state = $this->form->getState();
         $empleados = $state['empleados'] ?? [];
         if (!empty($empleados) && $this->record instanceof Model) {
@@ -51,6 +51,21 @@ class CreateProyecto extends CreateRecord
             }
 
             $this->record->empleados()->sync($syncData);
+        }
+
+        $cotizaciones = $this->pullUploadedFiles('cotizaciones');
+
+        if (! empty($cotizaciones) && $this->record instanceof Model) {
+            $user = auth()->user();
+            $empleado = $user?->empleado;
+            $creadoPor = $empleado?->cod_empleado ?? 0;
+
+            $this->storeArchivos($cotizaciones, [
+                'entidad' => 'proyectos',
+                'entidad_id' => $this->record->getKey(),
+                'creado_por' => $creadoPor,
+                'folder' => 'proyectos/cotizaciones',
+            ]);
         }
     }
 }

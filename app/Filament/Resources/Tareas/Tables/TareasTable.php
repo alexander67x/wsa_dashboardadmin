@@ -74,6 +74,13 @@ class TareasTable
                     ->placeholder('Sin asignar')
                     ->badge()
                     ->color('info'),
+
+                TextColumn::make('hito.titulo')
+                    ->label('Hito / Semana')
+                    ->badge()
+                    ->color('gray')
+                    ->placeholder('Sin asignar')
+                    ->toggleable(),
                 
                 TextColumn::make('fecha_inicio')
                     ->label('Inicio')
@@ -162,6 +169,13 @@ class TareasTable
                     ->relationship('responsable', 'nombre_completo')
                     ->searchable()
                     ->preload(),
+
+                SelectFilter::make('id_hito')
+                    ->label('Hito')
+                    ->relationship('hito', 'titulo')
+                    ->searchable()
+                    ->preload()
+                    ->placeholder('Todos los hitos'),
                 
                 TrashedFilter::make(),
             ]))

@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SolicitudesMateriales;
 
 use App\Filament\Resources\SolicitudesMateriales\Pages\ListSolicitudes;
 use App\Filament\Resources\SolicitudesMateriales\Pages\ViewSolicitud;
+use App\Filament\Resources\SolicitudesMateriales\RelationManagers\DeliveriesRelationManager;
 use App\Filament\Resources\SolicitudesMateriales\Schemas\SolicitudForm;
 use App\Filament\Resources\SolicitudesMateriales\Tables\SolicitudesMaterialesTable;
 use App\Models\SolicitudMaterial;
@@ -42,7 +43,7 @@ class SolicitudMaterialResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            DeliveriesRelationManager::class,
         ];
     }
 

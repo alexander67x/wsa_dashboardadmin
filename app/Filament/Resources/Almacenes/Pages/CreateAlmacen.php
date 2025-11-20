@@ -22,7 +22,13 @@ class CreateAlmacen extends CreateRecord
             $data['cod_proy'] = null;
         }
 
+        if (! empty($data['coordenadas']) && is_array($data['coordenadas'])) {
+            $data['latitud'] = $data['coordenadas']['latitude'] ?? $data['latitud'] ?? null;
+            $data['longitud'] = $data['coordenadas']['longitude'] ?? $data['longitud'] ?? null;
+        }
+
+        unset($data['coordenadas']);
+
         return $data;
     }
 }
-
