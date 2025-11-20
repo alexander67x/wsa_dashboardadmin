@@ -7,6 +7,7 @@ use App\Models\Archivo;
 use App\Models\Proyecto;
 use App\Models\ReporteAvanceTarea;
 use App\Models\Tarea;
+use App\Services\ProjectAccessService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -20,16 +21,20 @@ class KanbanController extends Controller
             'projectId' => ['nullable', 'string', 'exists:proyectos,cod_proy'],
         ]);
 
-        $projectId = $validated['projectId'] ?? Proyecto::query()->orderBy('cod_proy')->value('cod_proy');
-        if (! $projectId) {
-            return [
-                'En revisión' => [],
-                'Aprobado' => [],
-                'Rechazado' => [],
-                'Reenviado' => [],
-                'Tareas' => [],
-            ];
+        $allowed = ProjectAccessService::allowedProjectIds($request->user());
+        if ($allowed === []) {
+            return $this->emptyBoard();
         }
+
+        $projectId = $validated['projectId'] ?? ($allowed === null
+            ? Proyecto::query()->orderBy('cod_proy')->value('cod_proy')
+            : ($allowed[0] ?? null));
+
+        if (! $projectId) {
+            return $this->emptyBoard();
+        }
+
+        ProjectAccessService::ensureCanAccess($request->user(), $projectId);
 
         $reports = ReporteAvanceTarea::with(['registradoPor', 'archivos'])
             ->where('cod_proy', $projectId)
@@ -56,6 +61,8 @@ class KanbanController extends Controller
 
     public function addColumn(Request $request)
     {
+        ProjectAccessService::ensureCanAccess($request->user(), $request->input('projectId'));
+
         $request->validate([
             'name' => ['required', 'string'],
         ]);
@@ -67,6 +74,8 @@ class KanbanController extends Controller
 
     public function addCard(Request $request)
     {
+        ProjectAccessService::ensureCanAccess($request->user(), $request->input('projectId'));
+
         $data = $request->validate([
             'projectId' => ['required', 'string', 'exists:proyectos,cod_proy'],
             'taskId' => ['required', 'integer', 'exists:tareas,id_tarea'],
@@ -119,12 +128,14 @@ class KanbanController extends Controller
     {
         $report = ReporteAvanceTarea::with(['registradoPor', 'archivos'])->find($id);
         if ($report) {
+            ProjectAccessService::ensureCanAccess(request()->user(), $report->cod_proy);
             $card = $this->transformReportCard($report);
             $card['column'] = $this->mapEstadoToColumn($report->estado);
             return $card;
         }
 
         $task = Tarea::with('responsable')->findOrFail($id);
+        ProjectAccessService::ensureCanAccess(request()->user(), $task->cod_proy);
 
         return [
             'id' => (string) $task->id_tarea,
@@ -173,6 +184,8 @@ class KanbanController extends Controller
 
     protected function tasksForProject(string $projectId): array
     {
+        ProjectAccessService::ensureCanAccess(request()->user(), $projectId);
+
         return Tarea::with('responsable')
             ->where('cod_proy', $projectId)
             ->orderByDesc('updated_at')
@@ -192,5 +205,15 @@ class KanbanController extends Controller
             ->values()
             ->all();
     }
-}
 
+    protected function emptyBoard(): array
+    {
+        return [
+            'En revisión' => [],
+            'Aprobado' => [],
+            'Rechazado' => [],
+            'Reenviado' => [],
+            'Tareas' => [],
+        ];
+    }
+}

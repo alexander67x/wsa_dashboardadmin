@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\AsignacionProyecto;
 use App\Models\Empleado;
+use App\Models\Proyecto;
 use App\Models\Role;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\Hash;
 
@@ -90,6 +93,14 @@ class EmpleadoSeeder extends Seeder
 
         $roles = Role::pluck('id_role', 'slug')->toArray();
 
+        $assignmentMap = [
+            'gerencia@gmail.com' => ['PROY-001'],
+            'adquisiciones@empresa.com' => ['PROY-001'],
+            'proyectos@empresa.com' => ['PROY-001', 'PROY-002'],
+            'supervisor@empresa.com' => ['PROY-001'],
+            'personal@empresa.com' => ['PROY-001'],
+        ];
+
         foreach ($puestos as $puesto) {
             $user = null;
             if (! empty($puesto['user'])) {
@@ -123,6 +134,25 @@ class EmpleadoSeeder extends Seeder
             }
 
             $empleado->save();
+
+            foreach ($assignmentMap[$puesto['email']] ?? [] as $codProy) {
+                $proyecto = Proyecto::where('cod_proy', $codProy)->first();
+                if (! $proyecto) {
+                    continue;
+                }
+
+                AsignacionProyecto::firstOrCreate(
+                    [
+                        'cod_proy' => $codProy,
+                        'cod_empleado' => $empleado->cod_empleado,
+                    ],
+                    [
+                        'fecha_inicio_asignacion' => Carbon::now()->subDays(10),
+                        'rol_en_proyecto' => $puesto['role'],
+                        'estado' => 'activo',
+                    ]
+                );
+            }
 
             $this->command->info("✔ {$empleado->nombre_completo} asignado como {$puesto['role']} (Usuario: {$puesto['user']['email']})");
         }
