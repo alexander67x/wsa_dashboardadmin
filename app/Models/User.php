@@ -62,4 +62,14 @@ class User extends Authenticatable
     {
         return $this->hasMany(UserDevice::class);
     }
+
+    public function permissionCodes(): array
+    {
+        return $this->empleado?->permissionCodes() ?? [];
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return $this->empleado?->hasPermission($permission) ?? false;
+    }
 }

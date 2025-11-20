@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Reportes;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Reportes\Pages\ListReportes;
 use App\Filament\Resources\Reportes\Pages\ViewReporte;
 use App\Filament\Resources\Reportes\Schemas\ReporteForm;
@@ -15,6 +16,12 @@ use Filament\Tables\Table;
 
 class ReporteResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = [
+        'reports.view',
+        'reports.approve',
+    ];
     protected static ?string $model = ReporteAvanceTarea::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-document-text';

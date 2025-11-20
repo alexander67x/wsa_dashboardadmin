@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Proyectos;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Proyectos\Pages\CreateProyecto;
 use App\Filament\Resources\Proyectos\Pages\EditProyecto;
 use App\Filament\Resources\Proyectos\Pages\ListProyectos;
@@ -19,6 +20,13 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class ProyectoResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = [
+        'projects.manage.structure',
+        'projects.detail.view',
+        'projects.my.view',
+    ];
     protected static ?string $model = Proyecto::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-folder';

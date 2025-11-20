@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Incidencias;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Incidencias\Pages\ListIncidencias;
 use App\Filament\Resources\Incidencias\Pages\ViewIncidencia;
 use App\Filament\Resources\Incidencias\Schemas\IncidenciaForm;
@@ -15,6 +16,13 @@ use Filament\Tables\Table;
 
 class IncidenciaResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = [
+        'incidents.view',
+        'incidents.review.project',
+        'incidents.review.impact',
+    ];
     protected static ?string $model = Incidencia::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-exclamation-triangle';

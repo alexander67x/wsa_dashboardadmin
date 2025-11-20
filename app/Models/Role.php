@@ -14,6 +14,7 @@ class Role extends Model
     protected $keyType = 'int';
 
     protected $fillable = [
+        'slug',
         'nombre',
         'descripcion',
         'es_global',
@@ -26,4 +27,9 @@ class Role extends Model
         'puede_aprobar_solicitudes' => 'boolean',
         'puede_generar_reportes' => 'boolean',
     ];
+
+    public function permissions()
+    {
+        return $this->belongsToMany(Permission::class, 'role_permissions', 'role_id', 'permission_id');
+    }
 }

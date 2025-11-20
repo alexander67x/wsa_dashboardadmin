@@ -3,8 +3,10 @@
 namespace Database\Seeders;
 
 use App\Models\Empleado;
-use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use App\Models\Role;
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class EmpleadoSeeder extends Seeder
 {
@@ -13,59 +15,116 @@ class EmpleadoSeeder extends Seeder
      */
     public function run(): void
     {
-        $empleado1 = Empleado::firstOrCreate(
-            ['email' => 'ana.lopez@seguridadintegral.com'],
+        $puestos = [
             [
-                'nombre_completo' => 'Ana María López',
-                'cargo' => 'Gerente de Proyectos de Seguridad',
-                'departamento' => 'Gerencia de seguridad electrónica',
+                'email' => 'gerencia@gmail.com',
+                'nombre' => 'Gerente General',
+                'cargo' => 'Gerente General',
+                'departamento' => 'Dirección',
                 'telefono' => '+591-2-1111111',
-                'fecha_ingreso' => '2020-01-15',
-                'activo' => true,
-            ]
-        );
-
-        $empleado2 = Empleado::firstOrCreate(
-            ['email' => 'roberto.silva@seguridadintegral.com'],
+                'fecha' => '2019-01-01',
+                'role' => 'gerencia',
+                'user' => [
+                    'email' => 'gerencia@gmail.com',
+                    'name' => 'Gerente General',
+                    'password' => '123',
+                ],
+            ],
             [
-                'nombre_completo' => 'Roberto Silva',
-                'cargo' => 'Supervisor de Instalaciones',
-                'departamento' => 'Operaciones de campo',
+                'email' => 'adquisiciones@empresa.com',
+                'nombre' => 'Mariana Huanca',
+                'cargo' => 'Jefa de Adquisiciones',
+                'departamento' => 'Logística',
                 'telefono' => '+591-2-2222222',
-                'fecha_ingreso' => '2019-03-20',
-                'activo' => true,
-            ]
-        );
-
-        $empleado3 = Empleado::firstOrCreate(
-            ['email' => 'carmen.vargas@seguridadintegral.com'],
+                'fecha' => '2020-06-15',
+                'role' => 'adquisiciones',
+                'user' => [
+                    'email' => 'adquisiciones@empresa.com',
+                    'name' => 'Jefa Adquisiciones',
+                    'password' => 'adquisiciones123',
+                ],
+            ],
             [
-                'nombre_completo' => 'Carmen Vargas',
-                'cargo' => 'Técnica en CCTV y Alarmas',
-                'departamento' => 'Operaciones técnicas',
+                'email' => 'proyectos@empresa.com',
+                'nombre' => 'Luis Paredes',
+                'cargo' => 'Responsable de Proyectos',
+                'departamento' => 'Proyectos',
                 'telefono' => '+591-2-3333333',
-                'fecha_ingreso' => '2021-06-10',
-                'activo' => true,
-            ]
-        );
-
-        $empleado4 = Empleado::firstOrCreate(
-            ['email' => 'miguel.torres@seguridadintegral.com'],
+                'fecha' => '2021-04-10',
+                'role' => 'responsable_proyecto',
+                'user' => [
+                    'email' => 'proyectos@empresa.com',
+                    'name' => 'Responsable Proyecto',
+                    'password' => 'proyectos123',
+                ],
+            ],
             [
-                'nombre_completo' => 'Miguel Torres',
-                'cargo' => 'Ingeniero de Redes y Seguridad',
-                'departamento' => 'Ingeniería',
+                'email' => 'supervisor@empresa.com',
+                'nombre' => 'Carlos Salinas',
+                'cargo' => 'Supervisor de Obra',
+                'departamento' => 'Operaciones',
                 'telefono' => '+591-2-4444444',
-                'fecha_ingreso' => '2020-09-05',
-                'activo' => true,
-            ]
-        );
+                'fecha' => '2021-09-05',
+                'role' => 'supervisor',
+                'user' => [
+                    'email' => 'supervisor@empresa.com',
+                    'name' => 'Supervisor Obra',
+                    'password' => 'supervisor123',
+                ],
+            ],
+            [
+                'email' => 'personal@empresa.com',
+                'nombre' => 'Roberto Choque',
+                'cargo' => 'Técnico de Campo',
+                'departamento' => 'Operaciones',
+                'telefono' => '+591-2-5555555',
+                'fecha' => '2022-01-10',
+                'role' => 'personal_obra',
+                'user' => [
+                    'email' => 'personal@empresa.com',
+                    'name' => 'Personal de Obra',
+                    'password' => 'personal123',
+                ],
+            ],
+        ];
 
-        $this->command->info('✔ Empleados creados/verificados:');
-        $this->command->info("   - {$empleado1->nombre_completo} ({$empleado1->cargo})");
-        $this->command->info("   - {$empleado2->nombre_completo} ({$empleado2->cargo})");
-        $this->command->info("   - {$empleado3->nombre_completo} ({$empleado3->cargo})");
-        $this->command->info("   - {$empleado4->nombre_completo} ({$empleado4->cargo})");
+        $roles = Role::pluck('id_role', 'slug')->toArray();
+
+        foreach ($puestos as $puesto) {
+            $user = null;
+            if (! empty($puesto['user'])) {
+                $user = User::firstOrCreate(
+                    ['email' => $puesto['user']['email']],
+                    [
+                        'name' => $puesto['user']['name'],
+                        'password' => Hash::make($puesto['user']['password']),
+                    ],
+                );
+            }
+
+            $empleado = Empleado::firstOrCreate(
+                ['email' => $puesto['email']],
+                [
+                    'nombre_completo' => $puesto['nombre'],
+                    'cargo' => $puesto['cargo'],
+                    'departamento' => $puesto['departamento'],
+                    'telefono' => $puesto['telefono'],
+                    'fecha_ingreso' => $puesto['fecha'],
+                    'activo' => true,
+                ],
+            );
+
+            if ($user) {
+                $empleado->user()->associate($user);
+            }
+
+            if (isset($roles[$puesto['role']])) {
+                $empleado->id_role = $roles[$puesto['role']];
+            }
+
+            $empleado->save();
+
+            $this->command->info("✔ {$empleado->nombre_completo} asignado como {$puesto['role']} (Usuario: {$puesto['user']['email']})");
+        }
     }
 }
-

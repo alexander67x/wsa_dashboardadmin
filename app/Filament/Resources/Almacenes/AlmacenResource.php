@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Almacenes;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Almacenes\Pages\CreateAlmacen;
 use App\Filament\Resources\Almacenes\Pages\EditAlmacen;
 use App\Filament\Resources\Almacenes\Pages\ListAlmacenes;
@@ -17,6 +18,9 @@ use Filament\Tables\Table;
 
 class AlmacenResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = ['inventory.view.central', 'inventory.view.project'];
     protected static ?string $model = Almacen::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-storefront';

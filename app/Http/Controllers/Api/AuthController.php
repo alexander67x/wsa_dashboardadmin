@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use App\Models\User;
+use Illuminate\Support\Str;
 
 class AuthController extends Controller
 {
@@ -69,7 +70,13 @@ class AuthController extends Controller
 
 		return response()->json([
 			'token' => $token,
-			'role' => $role?->nombre ?? 'worker',
+			'role' => $role ? [
+				'id' => (string) $role->id_role,
+				'slug' => $role->slug ?? Str::slug($role->nombre),
+				'nombre' => $role->nombre,
+				'descripcion' => $role->descripcion,
+			] : null,
+			'permissions' => $empleado?->permissionCodes() ?? [],
 			'user' => [
 				'id' => (string) $user->id,
 				'name' => $user->name,
@@ -95,9 +102,11 @@ class AuthController extends Controller
 			'name' => $user->name,
 			'role' => $role ? [
 				'id' => $role->id_role,
+				'slug' => $role->slug ?? Str::slug($role->nombre),
 				'nombre' => $role->nombre,
 				'descripcion' => $role->descripcion,
 			] : null,
+			'permissions' => $empleado?->permissionCodes() ?? [],
 			'employeeId' => $empleado?->cod_empleado ? (string) $empleado->cod_empleado : null,
 			'employee' => $empleado ? [
 				'id' => (string) $empleado->cod_empleado,
@@ -113,4 +122,3 @@ class AuthController extends Controller
 		return response()->noContent();
 	}
 }
-

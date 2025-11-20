@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Empleados;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Empleados\Pages\CreateEmpleado;
 use App\Filament\Resources\Empleados\Pages\EditEmpleado;
 use App\Filament\Resources\Empleados\Pages\ListEmpleados;
@@ -18,6 +19,9 @@ use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class EmpleadoResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = ['admin.manage.employees'];
     protected static ?string $model = Empleado::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-user-group';

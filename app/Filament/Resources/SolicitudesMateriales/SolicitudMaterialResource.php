@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\SolicitudesMateriales;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\SolicitudesMateriales\Pages\ListSolicitudes;
 use App\Filament\Resources\SolicitudesMateriales\Pages\ViewSolicitud;
 use App\Filament\Resources\SolicitudesMateriales\RelationManagers\DeliveriesRelationManager;
@@ -16,6 +17,14 @@ use Filament\Tables\Table;
 
 class SolicitudMaterialResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = [
+        'materials.requests.create',
+        'materials.requests.approve',
+        'materials.requests.deliver',
+        'inventory.view.project',
+    ];
     protected static ?string $model = SolicitudMaterial::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-shopping-cart';

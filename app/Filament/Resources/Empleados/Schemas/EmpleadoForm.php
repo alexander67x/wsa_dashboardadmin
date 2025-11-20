@@ -7,6 +7,8 @@ use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\ViewField;
+use Filament\Forms\Get;
 use Filament\Schemas\Schema;
 
 class EmpleadoForm
@@ -39,6 +41,17 @@ class EmpleadoForm
                     ->preload()
                     ->getOptionLabelFromRecordUsing(fn (Role $record): string => $record->nombre)
                     ->helperText('Seleccione los privilegios del empleado'),
+
+                ViewField::make('role_privileges_preview')
+                    ->label('Privilegios del rol seleccionado')
+                    ->columnSpanFull()
+                    ->visible(fn ($get) => (bool) $get('id_role'))
+                    ->view('filament.components.role-permissions')
+                    ->viewData(fn ($get) => [
+                        'role' => $get('id_role')
+                            ? Role::with('permissions')->find($get('id_role'))
+                            : null,
+                    ]),
                 Toggle::make('activo')
                     ->required(),
             ]);

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Materiales;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Materiales\Pages\CreateMaterial;
 use App\Filament\Resources\Materiales\Pages\EditMaterial;
 use App\Filament\Resources\Materiales\Pages\ListMaterials;
@@ -16,6 +17,9 @@ use Filament\Tables\Table;
 
 class MaterialResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = ['inventory.view.central', 'inventory.view.project'];
     protected static ?string $model = Material::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-cube';
@@ -66,4 +70,3 @@ class MaterialResource extends Resource
         return 'primary';
     }
 }
-

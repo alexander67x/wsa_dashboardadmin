@@ -34,6 +34,9 @@ class Empleado extends Model
         'activo' => 'boolean',
     ];
 
+    protected $with = [
+        'role.permissions',
+    ];
 
     // Relaciones
     public function proyectosResponsable(): HasMany
@@ -66,5 +69,24 @@ class Empleado extends Model
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class, 'user_id', 'id');
+    }
+
+    public function permissionCodes(): array
+    {
+        if (! $this->relationLoaded('role') && $this->role) {
+            $this->loadMissing('role.permissions');
+        }
+
+        return $this->role?->permissions
+            ->pluck('codigo')
+            ->filter()
+            ->unique()
+            ->values()
+            ->toArray() ?? [];
+    }
+
+    public function hasPermission(string $permission): bool
+    {
+        return in_array($permission, $this->permissionCodes(), true);
     }
 }

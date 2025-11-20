@@ -21,26 +21,6 @@ class UserSeeder extends Seeder
                 'password' => 'admin123',
             ],
             [
-                'email' => 'gerente@empresa.com',
-                'name' => 'Gerente General',
-                'password' => 'gerente123',
-            ],
-            [
-                'email' => 'supervisor@empresa.com',
-                'name' => 'Supervisor de Obra',
-                'password' => 'supervisor123',
-            ],
-            [
-                'email' => 'almacen@empresa.com',
-                'name' => 'Responsable de Almacén',
-                'password' => 'almacen123',
-            ],
-            [
-                'email' => 'proyectos@empresa.com',
-                'name' => 'Gestor de Proyectos',
-                'password' => 'proyectos123',
-            ],
-            [
                 'email' => 'test@test.com',
                 'name' => 'Usuario de Prueba',
                 'password' => 'test123',
