@@ -53,7 +53,7 @@ COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/supervisord.conf /etc/supervisord.conf
 
 ENV APP_ENV=production \
-    APP_DEBUG=false \
+    APP_DEBUG=true \
     APP_URL=https://alwswsa.shop \
     DB_CONNECTION=mysql \
     DB_HOST=mysql \
