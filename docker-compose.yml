@@ -5,27 +5,24 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: wsa_app
     env_file:
-      - .env.production
+      - .env
     ports:
-      - "80:80"
+      - "8081:80"
     depends_on:
       - mysql
-    restart: always
 
   mysql:
     image: mysql:8.0
-    restart: always
     command: ["mysqld", "--default-authentication-plugin=mysql_native_password"]
     environment:
-      MYSQL_ROOT_PASSWORD: ""
       MYSQL_ALLOW_EMPTY_PASSWORD: "yes"
-      MYSQL_DATABASE: pruebawes
-    volumes:
-      - mysql_data:/var/lib/mysql
+      MYSQL_ROOT_PASSWORD: ""
+      MYSQL_DATABASE: "${DB_DATABASE}"
     ports:
       - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
 
 volumes:
   mysql_data:
