@@ -3,13 +3,15 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
 use Laravel\Sanctum\HasApiTokens;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasApiTokens, HasFactory, Notifiable;
@@ -71,5 +73,14 @@ class User extends Authenticatable
     public function hasPermission(string $permission): bool
     {
         return $this->empleado?->hasPermission($permission) ?? false;
+    }
+
+    /**
+     * Controla si el usuario puede acceder al panel de Filament.
+     * De momento permitimos acceso a cualquier usuario autenticado.
+     */
+    public function canAccessPanel(Panel $panel): bool
+    {
+        return true;
     }
 }
