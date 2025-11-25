@@ -7,6 +7,16 @@
 <a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
 </p>
 
+## Production setup
+
+- `docker-compose.yml` now builds and runs only the Laravel application container, which expects to reach an existing MySQL host at `172.18.0.1`.
+- `.env` is configured with `DB_DATABASE=pruebawes`, `DB_USERNAME=laravel` and `DB_PASSWORD=password123`. Adjust these keys if your database host uses different credentials.
+- The SQL snippet in `deploy/mysql_user.sql` drops/recreates the `laravel` database user, grants access to `pruebawes`, and sets the password defined inside the script (`Larav3l_2025!` by default), so keep it in sync with the `.env` file. Apply it from a MySQL shell, for example:
+
+```bash
+mysql -h 172.18.0.1 -uroot -p < deploy/mysql_user.sql
+```
+
 ## About Laravel
 
 Laravel is a web application framework with expressive, elegant syntax. We believe development must be an enjoyable and creative experience to be truly fulfilling. Laravel takes the pain out of development by easing common tasks used in many web projects, such as:
