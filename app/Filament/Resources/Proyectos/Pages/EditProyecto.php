@@ -9,7 +9,7 @@ use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
-
+use App\Models\User;
 class EditProyecto extends EditRecord
 {
     use HandlesArchivoUploads;
