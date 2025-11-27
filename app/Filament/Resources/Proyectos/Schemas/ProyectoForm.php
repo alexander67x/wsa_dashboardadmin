@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Proyectos\Schemas;
 use App\Filament\Components\MapPicker;
 use App\Models\Cliente;
 use App\Models\Empleado;
+use App\Models\Proyecto;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Select;
@@ -22,7 +23,7 @@ class ProyectoForm
         return $schema
             ->components([
                 TextInput::make('cod_proy')
-                    ->label('Código del Proyecto')
+                    ->label('C�digo del Proyecto')
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255)
@@ -35,18 +36,18 @@ class ProyectoForm
                     ->preload()
                     ->required(),
 
-                // Campos para crear la ubicación integrada en proyectos
+                // Campos para crear la ubicaci�n integrada en proyectos
                 TextInput::make('nombre_ubicacion')
-                    ->label('Nombre de la Ubicación')
+                    ->label('Nombre de la Ubicaci�n')
                     ->required()
                     ->maxLength(255)
                     ->placeholder('Ej: Obra Residencial Miraflores'),
 
                 Textarea::make('direccion')
-                    ->label('Dirección de la Ubicación')
+                    ->label('Direcci�n de la Ubicaci�n')
                     ->required()
                     ->rows(2)
-                    ->placeholder('Dirección completa de la obra'),
+                    ->placeholder('Direcci�n completa de la obra'),
 
                 TextInput::make('ciudad')
                     ->label('Ciudad')
@@ -55,17 +56,17 @@ class ProyectoForm
                     ->default('La Paz'),
 
                 TextInput::make('pais')
-                    ->label('País')
+                    ->label('Pa�s')
                     ->required()
                     ->maxLength(255)
                     ->default('Bolivia'),
 
                 // Mapa y coordenadas
                 MapPicker::make('coordenadas')
-                    ->label('Ubicación en el Mapa')
+                    ->label('Ubicaci�n en el Mapa')
                     ->columnSpanFull(),
 
-                // Campos ocultos para latitud y longitud (se llenan automáticamente desde el mapa)
+                // Campos ocultos para latitud y longitud (se llenan autom�ticamente desde el mapa)
                 TextInput::make('latitud')
                     ->label('Latitud')
                     ->numeric()
@@ -98,8 +99,27 @@ class ProyectoForm
                 Select::make('empleados')
                     ->label('Empleados Asignados')
                     ->multiple()
-                    // Usar opciones directas para evitar que Filament haga sync automático
+                    // Usar opciones directas para evitar que Filament haga sync autom�tico
                     ->options(fn () => Empleado::orderBy('nombre_completo')->pluck('nombre_completo', 'cod_empleado')->toArray())
+                    ->afterStateHydrated(function (Select $component, $state, ?Proyecto $record): void {
+                        // Mantener comportamiento base de selects m�ltiples
+                        if ($component->isMultiple() && ! is_array($state)) {
+                            $component->state([]);
+                        }
+
+                        if (! $record) {
+                            return;
+                        }
+
+                        // Pre-cargar empleados ya asignados al proyecto
+                        $component->state(
+                            $record->empleados
+                                ->pluck('cod_empleado')
+                                ->map(fn ($id) => (string) $id)
+                                ->values()
+                                ->all()
+                        );
+                    })
                     ->searchable()
                     ->columnSpanFull(),
 
@@ -143,7 +163,7 @@ class ProyectoForm
                     ->required(),
 
                 Textarea::make('descripcion')
-                    ->label('Descripción del Proyecto')
+                    ->label('Descripci�n del Proyecto')
                     ->columnSpanFull()
                     ->rows(3),
 
@@ -157,7 +177,7 @@ class ProyectoForm
                     ->downloadable()
                     ->dehydrated(false)
                     ->columnSpanFull()
-                    ->helperText('Sube archivos de cotizaciones, se versionarán automáticamente (V1, V2, etc.).'),
+                    ->helperText('Sube archivos de cotizaciones, se versionar�n autom�ticamente (V1, V2, etc.).'),
 
                 // presupuesto_inicial eliminado: gestionado fuera o no aplicable
 
@@ -181,3 +201,4 @@ class ProyectoForm
             ]);
     }
 }
+

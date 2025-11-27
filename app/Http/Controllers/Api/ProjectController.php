@@ -20,8 +20,8 @@ class ProjectController extends Controller
         }
 
         $query = Proyecto::query()
-            ->select(['cod_proy', 'nombre_ubicacion', 'cod_cliente', 'fecha_inicio', 'fecha_fin_estimada', 'created_at'])
-            ->with(['cliente:cod_cliente,nombre_cliente'])
+            ->select(['cod_proy', 'nombre_ubicacion', 'cod_cliente', 'fecha_inicio', 'fecha_fin_estimada', 'avance_financiero', 'created_at'])
+            ->with(['cliente:cod_cliente,nombre_cliente', 'empleados:cod_empleado,nombre_completo'])
             ->orderByDesc('created_at');
 
         if (is_array($allowed)) {
@@ -29,13 +29,28 @@ class ProjectController extends Controller
         }
 
         return $query->get()
-            ->map(fn (Proyecto $project) => [
-                'id' => (string) $project->getKey(),
-                'name' => $project->nombre_ubicacion,
-                'client' => $project->cliente?->nombre_cliente,
-                'startDate' => optional($project->fecha_inicio)->toDateString(),
-                'endDate' => optional($project->fecha_fin_estimada)->toDateString(),
-            ])
+            ->map(function (Proyecto $project) {
+                return [
+                    'id' => (string) $project->getKey(),
+                    'name' => $project->nombre_ubicacion,
+                    'client' => $project->cliente?->nombre_cliente,
+                    'startDate' => optional($project->fecha_inicio)->toDateString(),
+                    // Fecha límite del proyecto
+                    'endDate' => optional($project->fecha_fin_estimada)->toDateString(),
+                    'deadline' => optional($project->fecha_fin_estimada)->toDateString(),
+                    // Presupuesto / avance financiero
+                    'budget' => $project->avance_financiero !== null
+                        ? (float) $project->avance_financiero
+                        : null,
+                    // Miembros del proyecto (equipo asignado)
+                    'members' => $project->empleados
+                        ->map(fn ($empleado) => [
+                            'id' => (string) $empleado->cod_empleado,
+                            'name' => $empleado->nombre_completo,
+                        ])
+                        ->values(),
+                ];
+            })
             ->values();
     }
 
@@ -46,12 +61,26 @@ class ProjectController extends Controller
         $project = Proyecto::with([
             'cliente:cod_cliente,nombre_cliente',
             'tareas:id_tarea,cod_proy,titulo,estado',
+            'empleados:cod_empleado,nombre_completo,cargo',
         ])->findOrFail($id);
 
         return [
             'id' => (string) $project->getKey(),
             'name' => $project->nombre_ubicacion,
             'client' => $project->cliente?->nombre_cliente,
+            'startDate' => optional($project->fecha_inicio)->toDateString(),
+            'endDate' => optional($project->fecha_fin_estimada)->toDateString(),
+            'deadline' => optional($project->fecha_fin_estimada)->toDateString(),
+            'budget' => $project->avance_financiero !== null
+                ? (float) $project->avance_financiero
+                : null,
+            'members' => $project->empleados
+                ->map(fn ($empleado) => [
+                    'id' => (string) $empleado->cod_empleado,
+                    'name' => $empleado->nombre_completo,
+                    'role' => $empleado->pivot->rol_en_proyecto ?? null,
+                ])
+                ->values(),
             'tasks' => $project->tareas
                 ->map(fn ($task) => [
                     'id' => (string) $task->id_tarea,
@@ -145,8 +174,8 @@ class ProjectController extends Controller
         }
 
         $query = Proyecto::query()
-            ->with(['cliente:cod_cliente,nombre_cliente'])
-            ->select(['cod_proy', 'nombre_ubicacion', 'cod_cliente', 'fecha_inicio', 'fecha_fin_estimada', 'created_at'])
+            ->with(['cliente:cod_cliente,nombre_cliente', 'empleados:cod_empleado,nombre_completo'])
+            ->select(['cod_proy', 'nombre_ubicacion', 'cod_cliente', 'fecha_inicio', 'fecha_fin_estimada', 'avance_financiero', 'created_at'])
             ->orderByDesc('created_at');
 
         if (is_array($allowed)) {
@@ -154,13 +183,25 @@ class ProjectController extends Controller
         }
 
         return $query->get()
-            ->map(fn (Proyecto $project) => [
-                'id' => (string) $project->getKey(),
-                'name' => $project->nombre_ubicacion,
-                'client' => $project->cliente?->nombre_cliente,
-                'startDate' => optional($project->fecha_inicio)->toDateString(),
-                'endDate' => optional($project->fecha_fin_estimada)->toDateString(),
-            ])
+            ->map(function (Proyecto $project) {
+                return [
+                    'id' => (string) $project->getKey(),
+                    'name' => $project->nombre_ubicacion,
+                    'client' => $project->cliente?->nombre_cliente,
+                    'startDate' => optional($project->fecha_inicio)->toDateString(),
+                    'endDate' => optional($project->fecha_fin_estimada)->toDateString(),
+                    'deadline' => optional($project->fecha_fin_estimada)->toDateString(),
+                    'budget' => $project->avance_financiero !== null
+                        ? (float) $project->avance_financiero
+                        : null,
+                    'members' => $project->empleados
+                        ->map(fn ($empleado) => [
+                            'id' => (string) $empleado->cod_empleado,
+                            'name' => $empleado->nombre_completo,
+                        ])
+                        ->values(),
+                ];
+            })
             ->values();
     }
 

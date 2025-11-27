@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use App\Models\Archivo;
 
 class Proyecto extends Model
 {
@@ -103,6 +104,12 @@ class Proyecto extends Model
     public function hitos(): HasMany
     {
         return $this->hasMany(Hito::class, 'cod_proy', 'cod_proy');
+    }
+
+    public function archivos(): HasMany
+    {
+        return $this->hasMany(Archivo::class, 'entidad_id', 'cod_proy')
+            ->where('entidad', 'proyectos');
     }
 
     // Accessors para campos virtuales

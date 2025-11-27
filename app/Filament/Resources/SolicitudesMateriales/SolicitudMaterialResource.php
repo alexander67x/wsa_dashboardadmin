@@ -21,9 +21,9 @@ class SolicitudMaterialResource extends Resource
 
     protected static array $requiredPermissions = [
         'materials.requests.create',
+        'materials.requests.view',
         'materials.requests.approve',
         'materials.requests.deliver',
-        'inventory.view.project',
     ];
     protected static ?string $model = SolicitudMaterial::class;
 

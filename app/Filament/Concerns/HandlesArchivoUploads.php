@@ -8,7 +8,6 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
-use Throwable;
 
 trait HandlesArchivoUploads
 {

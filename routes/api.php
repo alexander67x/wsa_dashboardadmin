@@ -58,12 +58,12 @@ Route::middleware('auth:sanctum')->group(function () {
 	// Materials
 	Route::get('/materials/catalog', [MaterialController::class, 'catalog'])
 		->middleware('permission:inventory.view.project,inventory.view.central,projects.my.view');
-	Route::get('/materials/requests', [MaterialController::class, 'index'])
-		->middleware('permission:inventory.view.project,inventory.view.central');
+    Route::get('/materials/requests', [MaterialController::class, 'index'])
+			->middleware('permission:materials.requests.view,inventory.view.project,inventory.view.central');
 	Route::post('/materials/requests', [MaterialController::class, 'store'])
-		->middleware('permission:materials.requests.create,materials.requests.coordinate');
-	Route::get('/materials/requests/{id}', [MaterialController::class, 'show'])
-		->middleware('permission:inventory.view.project,inventory.view.central,projects.my.view');
+		->middleware('permission:materials.requests.create,materials.requests.coordinate,inventory.view.project,projects.my.view');
+    Route::get('/materials/requests/{id}', [MaterialController::class, 'show'])
+		->middleware('permission:materials.requests.view,inventory.view.project,inventory.view.central');
 	Route::post('/materials/requests/{id}/approve', [MaterialController::class, 'approve'])
 		->middleware('permission:materials.requests.approve');
 	Route::post('/materials/requests/{id}/reject', [MaterialController::class, 'reject'])

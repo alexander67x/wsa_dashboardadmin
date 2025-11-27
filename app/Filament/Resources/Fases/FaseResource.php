@@ -23,7 +23,7 @@ class FaseResource extends Resource
 
     protected static ?string $modelLabel = 'Fase';
 
-    protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-building-office-2';
+    protected static BackedEnum|string|null $navigationIcon = 'heroicon-o-building-office-2';
 
     protected static ?int $navigationSort = 3;
 

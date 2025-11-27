@@ -38,6 +38,10 @@ return [
             'label' => 'Crear solicitudes de material',
             'module' => 'materiales',
         ],
+        'materials.requests.view' => [
+            'label' => 'Consultar solicitudes de material',
+            'module' => 'materiales',
+        ],
         'materials.requests.approve' => [
             'label' => 'Aprobar o rechazar solicitudes',
             'module' => 'materiales',
@@ -174,6 +178,7 @@ return [
                 'inventory.movements.traceability',
                 'inventory.consumption.history',
                 'materials.requests.create',
+                'materials.requests.view',
                 'materials.requests.approve',
                 'materials.requests.deliver',
                 'projects.detail.view',
@@ -211,6 +216,7 @@ return [
                 'reports.view',
                 'incidents.view',
                 'materials.requests.create',
+                'materials.requests.view',
                 'materials.requests.approve',
             ],
         ],

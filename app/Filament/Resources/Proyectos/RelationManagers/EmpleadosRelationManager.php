@@ -2,10 +2,10 @@
 
 namespace App\Filament\Resources\Proyectos\RelationManagers;
 
+use Filament\Actions\DetachAction;
 use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
-use Filament\Tables\Actions\DetachAction;
 use Filament\Tables\Table;
 
 class EmpleadosRelationManager extends RelationManager
