@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasOne;
+use Illuminate\Database\Eloquent\Relations\HasManyThrough;
 use App\Models\Archivo;
+use App\Models\PlanificacionSemanal;
+use App\Models\EjecucionSemanal;
 
 class Proyecto extends Model
 {
@@ -104,6 +107,23 @@ class Proyecto extends Model
     public function hitos(): HasMany
     {
         return $this->hasMany(Hito::class, 'cod_proy', 'cod_proy');
+    }
+
+    public function planificacionesSemanales(): HasMany
+    {
+        return $this->hasMany(PlanificacionSemanal::class, 'cod_proy', 'cod_proy');
+    }
+
+    public function ejecucionesSemanales(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            EjecucionSemanal::class,
+            PlanificacionSemanal::class,
+            'cod_proy',
+            'id_plan',
+            'cod_proy',
+            'id_plan',
+        );
     }
 
     public function archivos(): HasMany

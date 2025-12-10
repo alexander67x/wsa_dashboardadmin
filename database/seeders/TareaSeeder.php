@@ -6,9 +6,9 @@ use App\Models\Proyecto;
 use App\Models\Hito;
 use App\Models\Tarea;
 use App\Models\Empleado;
+use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 use Illuminate\Support\Facades\DB;
-use Carbon\Carbon;
 
 class TareaSeeder extends Seeder
 {
@@ -71,9 +71,13 @@ class TareaSeeder extends Seeder
                 $fechaFin = (clone $fechaInicio)->addDays(rand(1, 5));
                 $estado = $estados[array_rand($estados)];
                 $prioridad = $prioridades[array_rand($prioridades)];
-                $responsable = $empleados->random();
+                $cantidadResponsables = (int) min(3, max(1, $empleados->count()));
+                $seleccion = $empleados->random(rand(1, $cantidadResponsables));
+                $responsablesSeleccionados = $seleccion instanceof \Illuminate\Support\Collection
+                    ? $seleccion
+                    : collect([$seleccion]);
                 
-                Tarea::create([
+                $tarea = Tarea::create([
                     'cod_proy' => $proyecto->cod_proy,
                     'id_hito' => $hito->id_hito,
                     'titulo' => 'Tarea ' . $i . ' - ' . $proyecto->nombre_ubicacion,
@@ -83,10 +87,16 @@ class TareaSeeder extends Seeder
                     'fecha_inicio' => $fechaInicio,
                     'fecha_fin' => $fechaFin,
                     'duracion_dias' => $fechaInicio->diffInDays($fechaFin),
-                    'responsable_id' => $responsable->cod_empleado,
                     'created_at' => Carbon::now(),
                     'updated_at' => Carbon::now(),
                 ]);
+
+                $tarea->responsables()->sync(
+                    $responsablesSeleccionados
+                        ->pluck('cod_empleado')
+                        ->unique()
+                        ->toArray()
+                );
             }
         }
 

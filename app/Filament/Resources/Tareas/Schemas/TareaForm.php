@@ -2,8 +2,8 @@
 
 namespace App\Filament\Resources\Tareas\Schemas;
 
-use App\Models\Proyecto;
 use App\Models\Hito;
+use App\Models\Proyecto;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
@@ -11,6 +11,7 @@ use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class TareaForm
 {
@@ -34,8 +35,8 @@ class TareaForm
                     ->dehydrated()
                     ->reactive()
                     ->afterStateUpdated(function (Set $set, $state) {
-                        // Limpiar responsable si cambia el proyecto
-                        $set('responsable_id', null);
+                        // Limpiar responsables si cambia el proyecto
+                        $set('responsables', []);
                         $set('id_hito', null);
                     }),
 
@@ -102,28 +103,24 @@ class TareaForm
                     ->default('media')
                     ->required(),
 
-                Select::make('responsable_id')
-                    ->label('Responsable')
-                    ->options(function (Get $get) {
-                        $codProy = $get('cod_proy');
-                        if (!$codProy) {
-                            return [];
+                Select::make('responsables')
+                    ->label('Responsables')
+                    ->relationship(
+                        name: 'responsables',
+                        titleAttribute: 'nombre_completo',
+                        modifyQueryUsing: function (Builder $query, Get $get) {
+                            $codProy = $get('cod_proy');
+
+                            if ($codProy) {
+                                $query->whereHas('proyectos', fn ($subQuery) => $subQuery->where('proyectos.cod_proy', $codProy));
+                            }
                         }
-                        
-                        // Obtener empleados asignados al proyecto
-                        $proyecto = Proyecto::with('empleados')->where('cod_proy', $codProy)->first();
-                        if (!$proyecto) {
-                            return [];
-                        }
-                        
-                        return $proyecto->empleados
-                            ->pluck('nombre_completo', 'cod_empleado')
-                            ->toArray();
-                    })
+                    )
+                    ->multiple()
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->helperText('Solo se listan empleados asignados al proyecto seleccionado.'),
+                    ->helperText('Selecciona uno o más responsables del proyecto.'),
 
                 Select::make('supervisor_asignado')
                     ->label('Supervisor')

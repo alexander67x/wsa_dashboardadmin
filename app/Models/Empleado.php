@@ -61,6 +61,12 @@ class Empleado extends Model
         return $this->hasMany(AsignacionProyecto::class, 'cod_empleado', 'cod_empleado');
     }
 
+    public function tareas(): BelongsToMany
+    {
+        return $this->belongsToMany(Tarea::class, 'tarea_responsables', 'responsable_id', 'tarea_id')
+            ->withTimestamps();
+    }
+
     public function role(): BelongsTo
     {
         return $this->belongsTo(Role::class, 'id_role', 'id_role');

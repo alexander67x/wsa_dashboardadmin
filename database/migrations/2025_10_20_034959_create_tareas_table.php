@@ -23,7 +23,6 @@ return new class extends Migration
             $table->integer('duracion_dias')->nullable()->comment('duración en días hábiles');
             $table->enum('prioridad', ['alta', 'media', 'baja'])->nullable()->default('media')->index();
             $table->enum('estado', ['pendiente', 'en_proceso', 'en_pausa', 'en_revision', 'finalizada', 'cancelada'])->nullable()->default('pendiente');
-            $table->integer('responsable_id')->index();
             $table->integer('supervisor_asignado')->nullable()->index();
             $table->integer('wip_column_id')->nullable()->index();
             $table->boolean('checkpoint_required')->nullable()->default(false);
@@ -31,7 +30,6 @@ return new class extends Migration
             $table->timestamp('updated_at')->nullable()->useCurrent();
             $table->softDeletes();
 
-            $table->index(['cod_proy', 'responsable_id'], 'idx_tareas_cod_proy_responsable');
             $table->index(['cod_proy', 'estado']);
         });
     }

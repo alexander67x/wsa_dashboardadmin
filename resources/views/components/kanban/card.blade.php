@@ -15,20 +15,28 @@
         default => ['color' => 'gray', 'label' => $tarea->estado, 'icon' => 'question'],
     };
 
-    // Responsable info
-    $responsable = $tarea->responsable;
-    $responsableNombre = $responsable?->nombre_completo;
-    $responsableIniciales = '—';
-    
-    if ($responsableNombre) {
-        $partes = preg_split('/\s+/', trim($responsableNombre));
+    // Responsables info
+    $responsables = $tarea->responsables ?? collect();
+    $responsableIds = $responsables->pluck('cod_empleado')->map(fn ($id) => (int) $id)->all();
+    $responsableBadges = $responsables->map(function ($empleado) {
+        $nombre = $empleado->nombre_completo ?? '';
+        $partes = preg_split('/\s+/', trim($nombre)) ?: [];
         $iniciales = '';
         foreach ($partes as $i => $parte) {
-            if ($i >= 2) break;
+            if ($i >= 2) {
+                break;
+            }
             $iniciales .= mb_substr($parte, 0, 1);
         }
-        $responsableIniciales = mb_strtoupper($iniciales);
-    }
+
+        $iniciales = $iniciales !== '' ? $iniciales : mb_substr($nombre, 0, 1, 'UTF-8');
+
+        return [
+            'id' => $empleado->cod_empleado,
+            'nombre' => $nombre,
+            'iniciales' => mb_strtoupper($iniciales ?: '?'),
+        ];
+    });
 
     // Prioridad config
     $prioridad = $tarea->prioridad ?? 'media';
@@ -146,15 +154,26 @@
 
     <!-- Footer: Responsable and Assign Selector -->
     <div class="flex items-center justify-between gap-2 pt-3 border-t border-gray-200 dark:border-gray-700">
-        <div class="flex items-center gap-2 min-w-0 flex-1">
-            @if($responsableNombre)
-                <div class="inline-flex h-8 w-8 items-center justify-center rounded-full 
-                           bg-gradient-to-br from-amber-400 to-amber-600 
-                           text-white text-[11px] font-bold shadow-sm shrink-0">
-                    {{ $responsableIniciales }}
+        <div class="flex flex-col gap-1 min-w-0 flex-1">
+            @if($responsableBadges->isNotEmpty())
+                <div class="flex -space-x-2">
+                    @foreach($responsableBadges->take(3) as $badge)
+                        <div class="inline-flex h-7 w-7 items-center justify-center rounded-full 
+                                    bg-gradient-to-br from-amber-400 to-amber-600 
+                                    text-white text-[10px] font-bold shadow-sm">
+                            {{ $badge['iniciales'] }}
+                        </div>
+                    @endforeach
+                    @if($responsableBadges->count() > 3)
+                        <div class="inline-flex h-7 w-7 items-center justify-center rounded-full 
+                                    bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 
+                                    text-[10px] font-semibold">
+                            +{{ $responsableBadges->count() - 3 }}
+                        </div>
+                    @endif
                 </div>
                 <span class="text-xs font-medium text-gray-700 dark:text-gray-300 truncate">
-                    {{ $responsableNombre }}
+                    {{ Str::limit($responsableBadges->pluck('nombre')->implode(', '), 40) }}
                 </span>
             @else
                 <div class="inline-flex h-8 w-8 items-center justify-center rounded-full 
@@ -162,23 +181,23 @@
                            text-[11px] font-medium shrink-0">
                     ?
                 </div>
-                <span class="text-xs text-gray-500 dark:text-gray-400">Sin responsable</span>
+                <span class="text-xs text-gray-500 dark:text-gray-400">Sin responsables</span>
             @endif
         </div>
         
         <select
+            multiple
             class="shrink-0 rounded-md border-gray-300 dark:border-gray-600 
                    bg-white dark:bg-gray-700 px-2 py-1 text-[11px] font-medium 
                    text-gray-700 dark:text-gray-300 
                    focus:ring-1 focus:ring-amber-500 focus:border-amber-500 
-                   transition-all max-w-[130px] cursor-pointer"
-            wire:change="assignResponsable({{ $tarea->id_tarea }}, parseInt($event.target.value)||null)"
-            title="Cambiar responsable"
+                   transition-all max-w-[150px] cursor-pointer min-h-[34px]"
+            x-on:change="$wire.assignResponsables({{ $tarea->id_tarea }}, Array.from($event.target.selectedOptions).map(option => parseInt(option.value)).filter(id => !Number.isNaN(id)))"
+            title="Selecciona uno o más responsables (Ctrl/Cmd para múltiples)"
         >
-            <option value="">Sin asignar</option>
             @foreach($empleados as $empleado)
                 <option value="{{ $empleado->cod_empleado }}" 
-                        @selected($tarea->responsable_id === $empleado->cod_empleado)>
+                        @selected(in_array($empleado->cod_empleado, $responsableIds))>
                     {{ Str::limit($empleado->nombre_completo, 18) }}
                 </option>
             @endforeach

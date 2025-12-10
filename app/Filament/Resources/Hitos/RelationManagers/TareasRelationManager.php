@@ -57,17 +57,22 @@ class TareasRelationManager extends RelationManager
                     ->default('media')
                     ->required(),
 
-                Select::make('responsable_id')
-                    ->label('Responsable')
-                    ->options(fn () => $ownerProject
-                        ? $ownerProject->empleados
-                            ->pluck('nombre_completo', 'cod_empleado')
-                            ->toArray()
-                        : [])
+                Select::make('responsables')
+                    ->label('Responsables')
+                    ->relationship(
+                        name: 'responsables',
+                        titleAttribute: 'nombre_completo',
+                        modifyQueryUsing: function (Builder $query) use ($ownerProject) {
+                            if ($ownerProject) {
+                                $query->whereHas('proyectos', fn ($subQuery) => $subQuery->where('proyectos.cod_proy', $ownerProject->cod_proy));
+                            }
+                        }
+                    )
+                    ->multiple()
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->placeholder($ownerProject ? 'Selecciona un responsable' : 'Asigna empleados al proyecto'),
+                    ->helperText($ownerProject ? 'Solo se listan empleados asignados al proyecto.' : 'Asigna empleados al proyecto para seleccionarlos.'),
 
                 Select::make('supervisor_asignado')
                     ->label('Supervisor')
@@ -105,6 +110,7 @@ class TareasRelationManager extends RelationManager
     public function table(Tables\Table $table): Tables\Table
     {
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('responsables'))
             ->recordTitleAttribute('titulo')
             ->columns([
                 TextColumn::make('titulo')
@@ -128,11 +134,11 @@ class TareasRelationManager extends RelationManager
                         default => 'gray',
                     }),
 
-                TextColumn::make('responsable.nombre_completo')
-                    ->label('Responsable')
-                    ->badge()
-                    ->color('info')
-                    ->placeholder('Sin asignar'),
+                TextColumn::make('responsables_display')
+                    ->label('Responsables')
+                    ->getStateUsing(fn ($record) => $record->responsables->pluck('nombre_completo')->implode(', '))
+                    ->placeholder('Sin asignar')
+                    ->wrap(),
 
                 TextColumn::make('fecha_inicio')
                     ->label('Inicio')

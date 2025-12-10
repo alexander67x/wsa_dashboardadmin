@@ -30,7 +30,7 @@ class Planificacion extends Page
     public array $tareasByColumn = [];
 
     public ?string $nuevoTitulo = null;
-    public ?int $nuevoResponsable = null;
+    public array $nuevosResponsables = [];
 
     protected array $defaultColumns = [
         [ 'nombre' => 'Por hacer',   'orden' => 1, 'es_entrada' => true,  'es_salida' => false ],
@@ -43,22 +43,31 @@ class Planificacion extends Page
         $this->refreshData();
     }
 
-    public function assignResponsable(int $idTarea, ?int $empleadoId): void
+    public function assignResponsables(int $idTarea, array $empleadoIds = []): void
     {
-        $t = Tarea::where('cod_proy', $this->codProy)->find($idTarea);
-        if (!$t) return;
-
-        if ($empleadoId) {
-            $pertenece = AsignacionProyecto::where('cod_proy', $this->codProy)
-                ->where('cod_empleado', $empleadoId)
-                ->exists();
-            if (!$pertenece) {
-                return; // No asignar empleados fuera del proyecto
-            }
+        if (! $this->codProy) {
+            return;
         }
 
-        $t->responsable_id = $empleadoId ?: null;
-        $t->save();
+        $tarea = Tarea::where('cod_proy', $this->codProy)->find($idTarea);
+        if (! $tarea) {
+            return;
+        }
+
+        $empleados = collect($empleadoIds)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        $validos = $empleados->isEmpty()
+            ? collect()
+            : AsignacionProyecto::where('cod_proy', $this->codProy)
+                ->whereIn('cod_empleado', $empleados)
+                ->pluck('cod_empleado')
+                ->unique();
+
+        $tarea->responsables()->sync($validos->all());
         $this->refreshData();
     }
 
@@ -90,6 +99,7 @@ class Planificacion extends Page
         foreach ($cols as $col) {
             $this->tareasByColumn[$col->id_column] = Tarea::where('cod_proy', $this->codProy)
                 ->where('wip_column_id', $col->id_column)
+                ->with('responsables')
                 ->orderBy('id_tarea')
                 ->get();
         }
@@ -119,29 +129,44 @@ class Planificacion extends Page
 
     public function createTarea(): void
     {
-        if (!$this->board) return;
+        if (!$this->board || !$this->codProy) return;
         if (!$this->nuevoTitulo) return;
-        $responsableId = $this->nuevoResponsable;
-        if (!$responsableId) return; // responsable es requerido por el esquema
 
-        $pertenece = AsignacionProyecto::where('cod_proy', $this->codProy)
-            ->where('cod_empleado', $responsableId)
-            ->exists();
-        if (!$pertenece) return;
+        $responsablesSeleccionados = collect($this->nuevosResponsables)
+            ->map(fn ($id) => (int) $id)
+            ->filter()
+            ->unique()
+            ->values();
+
+        if ($responsablesSeleccionados->isEmpty()) {
+            return;
+        }
+
+        $validos = AsignacionProyecto::where('cod_proy', $this->codProy)
+            ->whereIn('cod_empleado', $responsablesSeleccionados)
+            ->pluck('cod_empleado')
+            ->unique()
+            ->values();
+
+        if ($validos->isEmpty()) {
+            return;
+        }
+
         $entrada = $this->board->columns()->where('es_entrada', true)->orderBy('orden')->first();
         if (!$entrada) $entrada = $this->board->columns()->orderBy('orden')->first();
 
-        Tarea::create([
+        $tarea = Tarea::create([
             'cod_proy' => $this->codProy,
             'titulo' => $this->nuevoTitulo,
             'estado' => 'pendiente',
-            'responsable_id' => $responsableId,
             'wip_column_id' => $entrada?->id_column,
         ]);
 
+        $tarea->responsables()->sync($validos->all());
+
         $this->refreshData();
         $this->nuevoTitulo = null;
-        $this->nuevoResponsable = null;
+        $this->nuevosResponsables = [];
     }
 
     public function updateTarea(int $id, array $data): void

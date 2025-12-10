@@ -134,18 +134,23 @@ class KanbanController extends Controller
             return $card;
         }
 
-        $task = Tarea::with('responsable')->findOrFail($id);
+        $task = Tarea::with('responsables')->findOrFail($id);
         ProjectAccessService::ensureCanAccess(request()->user(), $task->cod_proy);
+
+        $responsibles = $this->serializeResponsables($task);
+        $primaryResponsible = $responsibles[0] ?? null;
 
         return [
             'id' => (string) $task->id_tarea,
             'title' => $task->titulo,
-            'authorId' => optional($task->responsable)?->cod_empleado ? (string) $task->responsable->cod_empleado : null,
-            'authorName' => $task->responsable?->nombre_completo,
+            'authorId' => $primaryResponsible['id'] ?? null,
+            'authorName' => $primaryResponsible['name'] ?? null,
             'description' => $task->descripcion,
             'photos' => [],
             'createdAt' => optional($task->created_at)->toDateTimeString(),
             'column' => $task->estado,
+            'responsibleIds' => collect($responsibles)->pluck('id')->all(),
+            'responsibles' => $responsibles,
         ];
     }
 
@@ -186,20 +191,25 @@ class KanbanController extends Controller
     {
         ProjectAccessService::ensureCanAccess(request()->user(), $projectId);
 
-        return Tarea::with('responsable')
+        return Tarea::with('responsables')
             ->where('cod_proy', $projectId)
             ->orderByDesc('updated_at')
             ->limit(20)
             ->get()
             ->map(function (Tarea $task) {
+                $responsibles = $this->serializeResponsables($task);
+                $primaryResponsible = $responsibles[0] ?? null;
+
                 return [
                     'id' => (string) $task->id_tarea,
                     'title' => $task->titulo,
-                    'authorId' => optional($task->responsable)?->cod_empleado ? (string) $task->responsable->cod_empleado : null,
-                    'authorName' => $task->responsable?->nombre_completo,
+                    'authorId' => $primaryResponsible['id'] ?? null,
+                    'authorName' => $primaryResponsible['name'] ?? null,
                     'description' => Str::limit($task->descripcion, 280),
                     'photos' => [],
                     'createdAt' => optional($task->created_at)->toDateTimeString(),
+                    'responsibleIds' => collect($responsibles)->pluck('id')->all(),
+                    'responsibles' => $responsibles,
                 ];
             })
             ->values()
@@ -215,5 +225,17 @@ class KanbanController extends Controller
             'Reenviado' => [],
             'Tareas' => [],
         ];
+    }
+
+    protected function serializeResponsables(Tarea $task): array
+    {
+        return $task->responsables
+            ->map(fn ($empleado) => [
+                'id' => (string) $empleado->cod_empleado,
+                'name' => $empleado->nombre_completo,
+                'position' => $empleado->cargo,
+            ])
+            ->values()
+            ->all();
     }
 }

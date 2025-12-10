@@ -24,6 +24,7 @@ class TareasTable
         // Mostrar todas las tareas por defecto
 
         return $table
+            ->modifyQueryUsing(fn (Builder $query) => $query->with('responsables'))
             ->columns([
                 TextColumn::make('titulo')
                     ->label('Título')
@@ -67,13 +68,12 @@ class TareasTable
                     ->formatStateUsing(fn (?string $state): string => $state ? ucfirst($state) : 'Sin prioridad')
                     ->sortable(),
                 
-                TextColumn::make('responsable.nombre_completo')
-                    ->label('Responsable')
-                    ->searchable()
-                    ->sortable()
+                TextColumn::make('responsables_display')
+                    ->label('Responsables')
+                    ->getStateUsing(fn ($record) => $record->responsables->pluck('nombre_completo')->implode(', '))
                     ->placeholder('Sin asignar')
-                    ->badge()
-                    ->color('info'),
+                    ->toggleable()
+                    ->wrap(),
 
                 TextColumn::make('hito.titulo')
                     ->label('Hito / Semana')
@@ -164,10 +164,11 @@ class TareasTable
                     ])
                     ->multiple(),
                 
-                SelectFilter::make('responsable_id')
-                    ->label('Responsable')
-                    ->relationship('responsable', 'nombre_completo')
+                SelectFilter::make('responsables')
+                    ->label('Responsables')
+                    ->relationship('responsables', 'nombre_completo')
                     ->searchable()
+                    ->multiple()
                     ->preload(),
 
                 SelectFilter::make('id_hito')

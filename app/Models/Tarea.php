@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
@@ -28,7 +29,6 @@ class Tarea extends Model
         'duracion_dias',
         'prioridad',
         'estado',
-        'responsable_id',
         'supervisor_asignado',
         'wip_column_id',
     ];
@@ -68,9 +68,10 @@ class Tarea extends Model
         return $this->belongsTo(KanbanColumn::class, 'wip_column_id', 'id_column');
     }
 
-    public function responsable(): BelongsTo
+    public function responsables(): BelongsToMany
     {
-        return $this->belongsTo(Empleado::class, 'responsable_id', 'cod_empleado');
+        return $this->belongsToMany(Empleado::class, 'tarea_responsables', 'tarea_id', 'responsable_id')
+            ->withTimestamps();
     }
 
     public function supervisor(): BelongsTo

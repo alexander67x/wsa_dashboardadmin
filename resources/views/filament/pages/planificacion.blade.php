@@ -354,23 +354,26 @@
                             
                             <div>
                                 <label class="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">
-                                    Responsable
+                                    Responsables
                                 </label>
                                 <select 
-                                    wire:model.defer="nuevoResponsable" 
+                                    wire:model.defer="nuevosResponsables"
+                                    multiple
                                     class="w-full rounded-lg border-gray-300 dark:border-gray-600 
                                            bg-white dark:bg-gray-700 px-4 py-2.5 text-sm font-medium 
                                            text-gray-900 dark:text-gray-100 
                                            focus:ring-2 focus:ring-amber-500 focus:border-amber-500 
-                                           transition-all"
+                                           transition-all min-h-[44px]"
                                 >
-                                    <option value="">-- Selecciona --</option>
                                     @foreach($this->empleados as $empleado)
                                         <option value="{{ $empleado->cod_empleado }}">
                                             {{ $empleado->nombre_completo }}
                                         </option>
                                     @endforeach
                                 </select>
+                                <p class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">
+                                    Selecciona uno o más responsables del proyecto.
+                                </p>
                             </div>
                         </div>
                         
@@ -379,7 +382,7 @@
                                 color="warning"
                                 size="md"
                                 wire:click="createTarea"
-                                :disabled="!$codProy || !$nuevoTitulo || !$nuevoResponsable"
+                                :disabled="!$codProy || !$nuevoTitulo || count($nuevosResponsables ?? []) === 0"
                                 class="gap-2"
                             >
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

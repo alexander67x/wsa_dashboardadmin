@@ -26,6 +26,7 @@ class DatabaseSeeder extends Seeder
             MaterialSubgrupoSeeder::class,  // Subgrupos de materiales
             MaterialSeeder::class,          // Materiales
             TareaSeeder::class,             // Tareas
+            PlanificacionSemanalSeeder::class, // Planificación y ejecución semanal
             ReporteSeeder::class,           // Reportes (después de tareas)
             SolicitudMaterialSeeder::class, // Solicitudes de Materiales
             IncidenciaSeeder::class,        // Incidencias (después de tareas y empleados)

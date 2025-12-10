@@ -46,11 +46,14 @@ class TaskController extends Controller
         }
 
         // Obtener tareas de esos proyectos
-        $tareas = Tarea::with(['proyecto:cod_proy,nombre_ubicacion', 'responsable:cod_empleado,nombre_completo'])
+        $tareas = Tarea::with(['proyecto:cod_proy,nombre_ubicacion', 'responsables:cod_empleado,nombre_completo,cargo'])
             ->whereIn('cod_proy', $proyectosIds)
             ->orderByDesc('created_at')
             ->get()
             ->map(function (Tarea $tarea) {
+                $responsibles = $this->serializeResponsables($tarea);
+                $primaryResponsible = $responsibles[0] ?? null;
+
                 return [
                     'id' => (string) $tarea->id_tarea,
                     'title' => $tarea->titulo,
@@ -61,8 +64,11 @@ class TaskController extends Controller
                     'priority' => $tarea->prioridad ?? 'media',
                     'startDate' => optional($tarea->fecha_inicio)->toDateString(),
                     'endDate' => optional($tarea->fecha_fin)->toDateString(),
-                    'responsibleId' => $tarea->responsable_id ? (string) $tarea->responsable_id : null,
-                    'responsibleName' => $tarea->responsable?->nombre_completo,
+                    'responsibleId' => $primaryResponsible['id'] ?? null,
+                    'responsibleName' => $primaryResponsible['name'] ?? null,
+                    'responsibleIds' => collect($responsibles)->pluck('id')->all(),
+                    'responsibles' => $responsibles,
+                    'responsible' => $primaryResponsible,
                     'createdAt' => optional($tarea->created_at)->toDateTimeString(),
                 ];
             });
@@ -84,7 +90,7 @@ class TaskController extends Controller
 
         $tarea = Tarea::with([
             'proyecto:cod_proy,nombre_ubicacion',
-            'responsable:cod_empleado,nombre_completo,cargo',
+            'responsables:cod_empleado,nombre_completo,cargo',
             'supervisor:cod_empleado,nombre_completo,cargo',
         ])->findOrFail($id);
 
@@ -108,6 +114,9 @@ class TaskController extends Controller
             abort(403, 'No tienes acceso a esta tarea');
         }
 
+        $responsibles = $this->serializeResponsables($tarea);
+        $primaryResponsible = $responsibles[0] ?? null;
+
         return [
             'id' => (string) $tarea->id_tarea,
             'title' => $tarea->titulo,
@@ -119,12 +128,11 @@ class TaskController extends Controller
             'startDate' => optional($tarea->fecha_inicio)->toDateString(),
             'endDate' => optional($tarea->fecha_fin)->toDateString(),
             'duration' => $tarea->duracion_dias,
-            'responsibleId' => $tarea->responsable_id ? (string) $tarea->responsable_id : null,
-            'responsible' => $tarea->responsable ? [
-                'id' => (string) $tarea->responsable->cod_empleado,
-                'name' => $tarea->responsable->nombre_completo,
-                'position' => $tarea->responsable->cargo,
-            ] : null,
+            'responsibleId' => $primaryResponsible['id'] ?? null,
+            'responsibleName' => $primaryResponsible['name'] ?? null,
+            'responsibleIds' => collect($responsibles)->pluck('id')->all(),
+            'responsibles' => $responsibles,
+            'responsible' => $primaryResponsible,
             'supervisorId' => $tarea->supervisor_asignado ? (string) $tarea->supervisor_asignado : null,
             'supervisor' => $tarea->supervisor ? [
                 'id' => (string) $tarea->supervisor->cod_empleado,
@@ -216,7 +224,7 @@ class TaskController extends Controller
         }
 
         // Actualizar la tarea asignándola al usuario
-        $tarea->responsable_id = $codEmpleado;
+        $tarea->responsables()->syncWithoutDetaching([$codEmpleado]);
         
         // Si la tarea estaba pendiente, cambiar a en_proceso al autoasignarse
         if ($tarea->estado === 'pendiente' || !$tarea->estado) {
@@ -224,7 +232,9 @@ class TaskController extends Controller
         }
         
         $tarea->save();
-        $tarea->load(['responsable:cod_empleado,nombre_completo,cargo']);
+        $tarea->load(['responsables:cod_empleado,nombre_completo,cargo']);
+
+        $responsibles = $this->serializeResponsables($tarea);
 
         return response()->json([
             'message' => 'Tarea asignada exitosamente',
@@ -232,10 +242,25 @@ class TaskController extends Controller
                 'id' => (string) $tarea->id_tarea,
                 'title' => $tarea->titulo,
                 'status' => $tarea->estado,
-                'responsibleId' => (string) $tarea->responsable_id,
-                'responsibleName' => $tarea->responsable?->nombre_completo,
+                'responsibleId' => $responsibles[0]['id'] ?? null,
+                'responsibleName' => $responsibles[0]['name'] ?? null,
+                'responsibleIds' => collect($responsibles)->pluck('id')->all(),
+                'responsibles' => $responsibles,
+                'responsible' => $responsibles[0] ?? null,
             ]
         ], 200);
+    }
+
+    protected function serializeResponsables(Tarea $tarea): array
+    {
+        return $tarea->responsables
+            ->map(fn ($empleado) => [
+                'id' => (string) $empleado->cod_empleado,
+                'name' => $empleado->nombre_completo,
+                'position' => $empleado->cargo,
+            ])
+            ->values()
+            ->all();
     }
 }
 
