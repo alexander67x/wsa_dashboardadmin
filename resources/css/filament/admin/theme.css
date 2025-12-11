@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "../../vendor/filament-fullcalendar.css";
 
 /* Fuentes de contenido para el extractor (Tailwind v4) */
 @source "./resources/**/*.blade.php";

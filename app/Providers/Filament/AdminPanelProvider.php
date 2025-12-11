@@ -19,6 +19,7 @@ use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
 use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -42,6 +43,27 @@ class AdminPanelProvider extends PanelProvider
                 AccountWidget::class,
                 FilamentInfoWidget::class,
             ])
+            ->plugin(
+                FilamentFullCalendarPlugin::make()
+                    ->locale(config('app.locale', 'es'))
+                    ->config([
+                        'initialView' => 'dayGridMonth',
+                        'headerToolbar' => [
+                            'left' => 'prev,next today',
+                            'center' => 'title',
+                            'right' => 'dayGridMonth,timeGridWeek,listWeek',
+                        ],
+                        'buttonText' => [
+                            'today' => 'Hoy',
+                            'month' => 'Mes',
+                            'week' => 'Semana',
+                            'day' => 'Día',
+                            'list' => 'Agenda',
+                        ],
+                        'height' => 'auto',
+                        'dayMaxEvents' => true,
+                    ])
+            )
             ->middleware([
                 EncryptCookies::class,
                 AddQueuedCookiesToResponse::class,

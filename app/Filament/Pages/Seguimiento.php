@@ -13,6 +13,7 @@ class Seguimiento extends Page
     protected static ?string $title = 'Curva de seguimiento';
     protected string $view = 'filament.pages.seguimiento';
 
+    public string $viewMode = 'curve';
     public array $projectOptions = [];
     public array $projectSeries = [];
     public ?string $defaultProject = null;
