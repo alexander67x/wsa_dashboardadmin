@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\Proyecto;
+use App\Models\Tarea;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -42,6 +43,50 @@ class SeguimientoService
             'projectOptions' => $projectOptions->toArray(),
             'projectSeries' => $series->toArray(),
             'defaultProject' => $defaultProject,
+        ];
+    }
+
+    public function getGanttData(): array
+    {
+        $proyectos = Proyecto::query()
+            ->with([
+                'tareas:id_tarea,cod_proy,titulo,fecha_inicio,fecha_fin,estado',
+            ])
+            ->orderBy('cod_proy')
+            ->get([
+                'cod_proy',
+                'nombre_ubicacion',
+                'descripcion',
+            ]);
+
+        $projectOptions = $proyectos->map(function (Proyecto $proyecto) {
+            $nombre = $proyecto->nombre_ubicacion ?? $proyecto->descripcion ?? $proyecto->cod_proy;
+
+            return [
+                'value' => $proyecto->cod_proy,
+                'label' => "{$nombre} ({$proyecto->cod_proy})",
+            ];
+        })->values();
+
+        $tasksByProject = $proyectos->mapWithKeys(function (Proyecto $proyecto) {
+            $nombre = $proyecto->nombre_ubicacion ?? $proyecto->descripcion ?? $proyecto->cod_proy;
+
+            return [
+                $proyecto->cod_proy => [
+                    'name' => $nombre,
+                    'tasks' => $proyecto->tareas
+                        ->map(fn (Tarea $tarea) => $this->mapTaskForGantt($tarea))
+                        ->filter()
+                        ->values()
+                        ->all(),
+                ],
+            ];
+        });
+
+        return [
+            'projectOptions' => $projectOptions->toArray(),
+            'projectTasks' => $tasksByProject->toArray(),
+            'defaultProject' => data_get($projectOptions->first(), 'value'),
         ];
     }
 
@@ -188,5 +233,45 @@ class SeguimientoService
         $value = $fecha instanceof Carbon ? $fecha : Carbon::parse($fecha);
 
         return $value->betweenIncluded($inicio, $fin);
+    }
+
+    private function mapTaskForGantt(Tarea $tarea): ?array
+    {
+        if (! $tarea->fecha_inicio) {
+            return null;
+        }
+
+        $inicio = $tarea->fecha_inicio instanceof Carbon
+            ? $tarea->fecha_inicio->copy()
+            : Carbon::parse($tarea->fecha_inicio);
+
+        $fin = $tarea->fecha_fin instanceof Carbon
+            ? $tarea->fecha_fin->copy()
+            : ($tarea->fecha_fin ? Carbon::parse($tarea->fecha_fin) : $inicio->copy());
+
+        if ($fin->lessThan($inicio)) {
+            $fin = $inicio->copy();
+        }
+
+        return [
+            'id' => (string) $tarea->getKey(),
+            'name' => $tarea->titulo ?: 'Tarea '.$tarea->getKey(),
+            'start' => $inicio->format('Y-m-d'),
+            'end' => $fin->format('Y-m-d'),
+            'status' => $tarea->estado ?? 'sin estado',
+            'progress' => $this->inferProgress($tarea->estado),
+            'duration_days' => $inicio->diffInDays($fin) + 1,
+        ];
+    }
+
+    private function inferProgress(?string $estado): int
+    {
+        return match (strtolower((string) $estado)) {
+            'finalizada', 'completada', 'cerrada' => 100,
+            'en progreso', 'en_progreso', 'proceso' => 65,
+            'pendiente', 'por iniciar', 'por_iniciar' => 10,
+            'bloqueada', 'pausada' => 35,
+            default => 45,
+        };
     }
 }

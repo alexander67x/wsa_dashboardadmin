@@ -17,4 +17,11 @@ class SeguimientoController extends Controller
 
         return view('seguimiento', $summary);
     }
+
+    public function gantt()
+    {
+        $summary = $this->service->getGanttData();
+
+        return view('seguimiento-gantt', $summary);
+    }
 }

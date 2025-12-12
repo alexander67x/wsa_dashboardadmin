@@ -8,3 +8,4 @@ Route::get('/', function () {
 });
 
 Route::get('/seguimiento', [SeguimientoController::class, 'index'])->name('seguimiento');
+Route::get('/seguimiento/gantt', [SeguimientoController::class, 'gantt'])->name('seguimiento.gantt');
