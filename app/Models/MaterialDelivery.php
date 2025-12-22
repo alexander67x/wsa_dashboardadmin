@@ -30,6 +30,7 @@ class MaterialDelivery extends Model
         'observaciones',
         'estado',
         'fecha_recepcion',
+        'foto_recepcion_url',
     ];
 
     protected $casts = [

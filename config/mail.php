@@ -115,4 +115,14 @@ return [
         'name' => env('MAIL_FROM_NAME', 'Example'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Resend API configuration (HTTP)
+    |--------------------------------------------------------------------------
+    */
+
+    'resend_key' => env('RESEND_API_KEY'),
+    'resend_from' => env('RESEND_FROM_EMAIL', env('MAIL_FROM_ADDRESS', 'hello@example.com')),
+    'resend_enabled' => env('RESEND_ENABLED', false),
+
 ];

@@ -50,6 +50,10 @@ return [
             'label' => 'Registrar entregas/avances de solicitudes',
             'module' => 'materiales',
         ],
+        'materials.deliveries.confirm' => [
+            'label' => 'Confirmar recepción de entregas con foto',
+            'module' => 'materiales',
+        ],
         'dashboard.projects.overview' => [
             'label' => 'Ver panel general de proyectos',
             'module' => 'proyectos',
@@ -181,6 +185,7 @@ return [
                 'materials.requests.view',
                 'materials.requests.approve',
                 'materials.requests.deliver',
+                'materials.deliveries.confirm',
                 'projects.detail.view',
                 'reports.material.summary',
             ],
@@ -231,6 +236,8 @@ return [
                 'reports.view',
                 'reports.approve',
                 'materials.validate.usage',
+                'materials.requests.deliver',
+                'materials.deliveries.confirm',
                 'incidents.record.high',
                 'reports.daily.close',
                 'inventory.view.project',

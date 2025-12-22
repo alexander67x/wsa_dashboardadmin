@@ -84,10 +84,13 @@ class MaterialController extends Controller
 			return [
 				'id' => (string) $solicitud->id_solicitud,
 				'numeroSolicitud' => $solicitud->numero_solicitud,
-				'proyecto' => [
-					'id' => $solicitud->cod_proy,
-					'nombre' => $solicitud->proyecto?->nombre_proyecto,
-				],
+                'proyecto' => [
+                    'id' => $solicitud->cod_proy,
+                    'nombre' => $solicitud->proyecto?->nombre_ubicacion
+                        ?? $solicitud->proyecto?->descripcion
+                        ?? $solicitud->proyecto?->nombre_proyecto
+                        ?? $solicitud->cod_proy,
+                ],
 				'solicitadoPor' => [
 					'id' => (string) $solicitud->solicitado_por,
 					'nombre' => $solicitud->solicitadoPor->nombre_completo ?? null,
@@ -120,10 +123,13 @@ class MaterialController extends Controller
 		return response()->json([
 			'id' => (string) $solicitud->id_solicitud,
 			'numeroSolicitud' => $solicitud->numero_solicitud,
-			'proyecto' => [
-				'id' => $solicitud->cod_proy,
-				'nombre' => $solicitud->proyecto?->nombre_proyecto,
-			],
+            'proyecto' => [
+                'id' => $solicitud->cod_proy,
+                'nombre' => $solicitud->proyecto?->nombre_ubicacion
+                    ?? $solicitud->proyecto?->descripcion
+                    ?? $solicitud->proyecto?->nombre_proyecto
+                    ?? $solicitud->cod_proy,
+            ],
 			'solicitadoPor' => [
 				'id' => (string) $solicitud->solicitado_por,
 				'nombre' => $solicitud->solicitadoPor->nombre_completo ?? null,
@@ -343,6 +349,75 @@ class MaterialController extends Controller
 				'error' => $e->getMessage()
 			], 500);
 		}
+	}
+
+	/**
+	 * Confirma la recepción de una entrega de materiales desde móvil,
+	 * guardando el respaldo de la foto tomada en obra.
+	 */
+	public function confirmReception(Request $request, string $id)
+	{
+		$user = $request->user();
+		$empleado = $user->empleado;
+
+		if (!$empleado) {
+			return response()->json(['message' => 'No se encontr¢ un empleado asociado al usuario'], 404);
+		}
+
+		$data = $request->validate([
+			'photoUrl' => ['required', 'url', 'max:2048'],
+			'observaciones' => ['nullable', 'string'],
+		]);
+
+		$delivery = MaterialDelivery::with('solicitud')->findOrFail($id);
+
+		if ($delivery->estado === 'recibido') {
+			return response()->json([
+				'message' => 'La entrega ya fue marcada como recibida.',
+				'deliveryId' => (string) $delivery->id_entrega,
+			], 422);
+		}
+
+		$solicitud = $delivery->solicitud;
+
+		DB::transaction(function () use ($delivery, $solicitud, $empleado, $user, $data) {
+			$observaciones = $data['observaciones'] ?? null;
+
+			$delivery->update([
+				'estado' => 'recibido',
+				'recibido_por' => $empleado->cod_empleado,
+				'fecha_recepcion' => now(),
+				'foto_recepcion_url' => $data['photoUrl'],
+				'observaciones' => $observaciones
+					? ($delivery->observaciones
+						? $delivery->observaciones . "\n\nRecepci¢n en obra: " . $observaciones
+						: "Recepci¢n en obra: " . $observaciones)
+					: $delivery->observaciones,
+			]);
+
+			$this->registrarEventoHistorial(
+				$solicitud,
+				'confirmada_recepcion_entrega',
+				$user,
+				$empleado,
+				[
+					'delivery_id' => $delivery->id_entrega,
+					'numero_entrega' => $delivery->numero_entrega,
+					'foto_recepcion_url' => $data['photoUrl'],
+				],
+				'Recepci¢n de entrega confirmada desde m¢vil.'
+			);
+		});
+
+		$delivery->refresh();
+
+		return response()->json([
+			'message' => 'Recepci¢n confirmada exitosamente.',
+			'deliveryId' => (string) $delivery->id_entrega,
+			'photoUrl' => $delivery->foto_recepcion_url,
+			'recibidoPor' => (string) $empleado->cod_empleado,
+			'fechaRecepcion' => optional($delivery->fecha_recepcion)->toIso8601String(),
+		]);
 	}
 
 	public function approve(Request $request, string $id)

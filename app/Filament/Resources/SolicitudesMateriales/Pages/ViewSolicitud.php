@@ -34,6 +34,7 @@ class ViewSolicitud extends ViewRecord
     protected function getHeaderActions(): array
     {
         $actions = [];
+        $userRole = Auth::user()?->empleado?->role?->slug;
 
         // Solo mostrar acciones de aprobar/rechazar si la solicitud está pendiente o en borrador
         if (in_array($this->record->estado, ['borrador', 'pendiente'])) {
@@ -116,6 +117,26 @@ class ViewSolicitud extends ViewRecord
                 ])
                 ->action(function (array $data): void {
                     $this->rechazarSolicitud($data['observaciones']);
+                });
+        }
+        // Permitir a Adquisiciones marcar como enviado cuando ya está aprobada
+        if ($this->record->estado === 'aprobada' && $userRole === 'adquisiciones') {
+            $actions[] = Action::make('marcar_enviado')
+                ->label('Marcar como Enviado')
+                ->icon('heroicon-o-truck')
+                ->color('primary')
+                ->requiresConfirmation()
+                ->modalHeading('Confirmar despacho de materiales')
+                ->modalDescription('Confirma que los materiales fueron despachados hacia el proyecto. La solicitud pasará a estado "enviado".')
+                ->form([
+                    Textarea::make('observaciones')
+                        ->label('Observaciones (opcional)')
+                        ->placeholder('Notas sobre el despacho...')
+                        ->rows(3)
+                        ->maxLength(500),
+                ])
+                ->action(function (array $data): void {
+                    $this->marcarSolicitudEnviada($data['observaciones'] ?? null);
                 });
         }
 
@@ -388,6 +409,38 @@ class ViewSolicitud extends ViewRecord
                 ->send();
         }
     }
+    protected function marcarSolicitudEnviada(?string $observaciones): void
+    {
+        try {
+            DB::beginTransaction();
+
+            $this->record->update([
+                'estado' => 'enviado',
+                'observaciones' => $observaciones
+                    ? ($this->record->observaciones ? $this->record->observaciones . "\n\nDespacho: " . $observaciones : "Despacho: " . $observaciones)
+                    : $this->record->observaciones,
+            ]);
+
+            $this->registrarEventoHistorial('enviado', $observaciones);
+
+            DB::commit();
+
+            Notification::make()
+                ->title('Solicitud marcada como enviada')
+                ->body('El despacho fue registrado y la solicitud pasó a estado enviado.')
+                ->success()
+                ->send();
+
+            $this->redirect(SolicitudMaterialResource::getUrl('index'));
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Notification::make()
+                ->title('Error')
+                ->body('Ocurrió un error al marcar la solicitud como enviada: ' . $e->getMessage())
+                ->danger()
+                ->send();
+        }
+    }
 
     /**
      * Registra un evento en el historial de la solicitud
@@ -406,6 +459,7 @@ class ViewSolicitud extends ViewRecord
             'aprobada_con_compra' => "Solicitud {$this->record->numero_solicitud} aprobada asumiendo compra de materiales",
             'aprobada_solo_stock' => "Solicitud {$this->record->numero_solicitud} aprobada solo con stock disponible",
             'rechazada' => "Solicitud {$this->record->numero_solicitud} rechazada",
+            'enviado' => "Solicitud {$this->record->numero_solicitud} marcada como enviada",
         ];
 
         SolicitudHistorial::create([

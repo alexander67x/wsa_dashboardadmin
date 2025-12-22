@@ -6,6 +6,7 @@ use App\Filament\Resources\Reportes\ReporteResource;
 use App\Models\Almacen;
 use App\Models\Empleado;
 use App\Models\StockAlmacen;
+use App\Services\ResendMailService;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -21,7 +22,7 @@ class ViewReporte extends ViewRecord
     {
         // Cargar relaciones necesarias
         $this->record->load(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor', 'archivos', 'materiales.material']);
-        
+
         return $data;
     }
 
@@ -76,13 +77,13 @@ class ViewReporte extends ViewRecord
     {
         try {
             DB::beginTransaction();
-            
+
             $user = Auth::user();
-            
+
             // Buscar el empleado asociado al usuario
             $empleado = Empleado::where('email', $user->email)->first();
-            
-            if (!$empleado) {
+
+            if (! $empleado) {
                 Notification::make()
                     ->title('Error')
                     ->body('No se encontró un empleado asociado a tu usuario.')
@@ -102,14 +103,14 @@ class ViewReporte extends ViewRecord
 
             // Restar materiales del stock si el reporte tiene materiales
             $materialesUsados = $this->record->materiales;
-            
+
             if ($materialesUsados->isNotEmpty()) {
                 // Buscar almacén asociado al proyecto (debe existir ya que la API solo muestra materiales de este almacén)
                 $almacen = Almacen::where('cod_proy', $this->record->cod_proy)
                     ->where('activo', true)
                     ->first();
 
-                if (!$almacen) {
+                if (! $almacen) {
                     DB::rollBack();
                     Notification::make()
                         ->title('Error')
@@ -120,18 +121,18 @@ class ViewReporte extends ViewRecord
                 }
 
                 $errores = [];
-                
+
                 foreach ($materialesUsados as $reporteMaterial) {
                     // Cargar información del material para mensajes más descriptivos
                     $material = \App\Models\Material::find($reporteMaterial->id_material);
                     $nombreMaterial = $material ? $material->nombre_producto : "ID {$reporteMaterial->id_material}";
-                    
+
                     // Buscar el stock en el almacén del proyecto
                     $stock = StockAlmacen::where('id_almacen', $almacen->id_almacen)
                         ->where('id_material', $reporteMaterial->id_material)
                         ->first();
 
-                    if (!$stock) {
+                    if (! $stock) {
                         // El material debería existir en el almacén ya que la API solo muestra materiales disponibles
                         $errores[] = "Material '{$nombreMaterial}' (ID: {$reporteMaterial->id_material}) no encontrado en el almacén del proyecto '{$almacen->nombre}' (ID: {$almacen->id_almacen}). Verifique que el material esté correctamente registrado en el almacén.";
                         continue;
@@ -149,7 +150,7 @@ class ViewReporte extends ViewRecord
                     $stock->decrement('cantidad_disponible', $cantidadUsada);
                 }
 
-                if (!empty($errores)) {
+                if (! empty($errores)) {
                     DB::rollBack();
                     Notification::make()
                         ->title('Error al procesar materiales')
@@ -168,6 +169,8 @@ class ViewReporte extends ViewRecord
                 ->success()
                 ->send();
 
+            $this->notifyReportStatusChange('aprobado', $observaciones);
+
             $this->redirect(ReporteResource::getUrl('index'));
         } catch (\Exception $e) {
             DB::rollBack();
@@ -183,13 +186,13 @@ class ViewReporte extends ViewRecord
     {
         try {
             DB::beginTransaction();
-            
+
             $user = Auth::user();
-            
+
             // Buscar el empleado asociado al usuario
             $empleado = Empleado::where('email', $user->email)->first();
-            
-            if (!$empleado) {
+
+            if (! $empleado) {
                 Notification::make()
                     ->title('Error')
                     ->body('No se encontró un empleado asociado a tu usuario.')
@@ -214,6 +217,8 @@ class ViewReporte extends ViewRecord
                 ->warning()
                 ->send();
 
+            $this->notifyReportStatusChange('rechazado', $observaciones);
+
             $this->redirect(ReporteResource::getUrl('index'));
         } catch (\Exception $e) {
             DB::rollBack();
@@ -223,6 +228,37 @@ class ViewReporte extends ViewRecord
                 ->danger()
                 ->send();
         }
+    }
+
+    protected function notifyReportStatusChange(string $estado, ?string $observaciones = null): void
+    {
+        $this->record->loadMissing(['proyecto', 'tarea', 'registradoPor']);
+
+        $destinatario = $this->record->registradoPor;
+        if (! $destinatario || ! $destinatario->email) {
+            return;
+        }
+
+        $resend = app(ResendMailService::class);
+
+        $projectName = $this->record->proyecto?->nombre_ubicacion ?? $this->record->cod_proy;
+        $taskTitle = $this->record->tarea?->titulo ?? 'Tarea';
+
+        $estadoLabel = $estado === 'aprobado' ? 'aprobado' : 'rechazado';
+
+        $subject = "Reporte {$estadoLabel} - {$projectName}";
+
+        $html = "<p>Hola {$destinatario->nombre_completo},</p>"
+            . "<p>Tu reporte <strong>{$this->record->titulo}</strong> en la tarea "
+            . "<strong>{$taskTitle}</strong> del proyecto "
+            . "<strong>{$projectName}</strong> ha sido {$estadoLabel}.</p>";
+
+        if ($observaciones) {
+            $html .= "<p><strong>Observaciones del supervisor:</strong><br>"
+                . nl2br(e($observaciones)) . '</p>';
+        }
+
+        $resend->send($destinatario->email, $subject, $html);
     }
 }
 

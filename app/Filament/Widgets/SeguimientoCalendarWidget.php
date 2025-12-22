@@ -6,6 +6,7 @@ use App\Filament\Resources\Tareas\TareaResource;
 use App\Models\Tarea;
 use Carbon\CarbonImmutable;
 use Carbon\CarbonInterface;
+use Filament\Actions\Action;
 use Illuminate\Database\Eloquent\Builder;
 use Saade\FilamentFullCalendar\Data\EventData;
 use Saade\FilamentFullCalendar\Widgets\FullCalendarWidget;
@@ -15,6 +16,22 @@ class SeguimientoCalendarWidget extends FullCalendarWidget
     protected static ?string $heading = 'Calendario de tareas';
 
     protected int | string | array $columnSpan = 'full';
+    public ?string $project = null;
+
+    public function mount(?string $project = null): void
+    {
+        $this->project = $project;
+    }
+
+    protected function headerActions(): array
+    {
+        return [
+            Action::make('create')
+                ->label('Crear tarea')
+                ->icon('heroicon-o-plus')
+                ->url(TareaResource::getUrl('create')),
+        ];
+    }
 
     /**
      * Fetch tasks within the requested range and expose them as calendar events.
@@ -46,6 +63,7 @@ class SeguimientoCalendarWidget extends FullCalendarWidget
                 'fecha_fin',
             ])
             ->whereNotNull('fecha_inicio')
+            ->when($this->project, fn (Builder $query, string $project) => $query->where('cod_proy', $project))
             ->where(function (Builder $query) use ($start, $end) {
                 $query
                     ->whereBetween('fecha_inicio', [$start, $end])

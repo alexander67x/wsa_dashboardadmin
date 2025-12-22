@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Tareas\Pages;
 
 use App\Filament\Resources\Tareas\TareaResource;
+use App\Services\ResendMailService;
 use Filament\Resources\Pages\CreateRecord;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
@@ -29,6 +30,29 @@ class CreateTarea extends CreateRecord
         }
     }
 
+    protected function afterCreate(): void
+    {
+        $this->record->loadMissing(['responsables', 'proyecto']);
+
+        $resend = app(ResendMailService::class);
+
+        $projectName = $this->record->proyecto?->nombre_ubicacion ?? $this->record->cod_proy;
+        $taskTitle = $this->record->titulo;
+
+        foreach ($this->record->responsables as $responsable) {
+            if (! $responsable->email) {
+                continue;
+            }
+
+            $subject = "Nueva tarea asignada: {$taskTitle}";
+            $html = "<p>Hola {$responsable->nombre_completo},</p>"
+                . "<p>Se te ha asignado la tarea <strong>{$taskTitle}</strong> "
+                . "en el proyecto <strong>{$projectName}</strong>.</p>";
+
+            $resend->send($responsable->email, $subject, $html);
+        }
+    }
+
     protected function getRedirectUrl(): string
     {
         $codProy = $this->record->cod_proy ?? $this->codProyFromFilter;
@@ -46,4 +70,3 @@ class CreateTarea extends CreateRecord
         return $this->getResource()::getUrl('index');
     }
 }
-

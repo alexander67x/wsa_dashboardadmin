@@ -7,6 +7,7 @@ use Filament\Resources\RelationManagers\RelationManager;
 use Filament\Schemas\Schema;
 use Filament\Tables;
 use Filament\Tables\Table;
+use Filament\Tables\Columns\ImageColumn;
 use Illuminate\Database\Eloquent\Model;
 
 class DeliveriesRelationManager extends RelationManager
@@ -70,6 +71,14 @@ class DeliveriesRelationManager extends RelationManager
                     ->label('Observaciones')
                     ->wrap()
                     ->toggleable(),
+                ImageColumn::make('foto_recepcion_url')
+                    ->label('Foto de recepción')
+                    ->square()
+                    ->height(80)
+                    ->url(fn (?string $state) => $state, true)
+                    ->openUrlInNewTab()
+                    ->visible(fn ($record) => ! empty($record->foto_recepcion_url))
+                    ->placeholder('Sin foto'),
             ])
             ->filters([])
             ->headerActions([])

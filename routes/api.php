@@ -70,6 +70,8 @@ Route::middleware('auth:sanctum')->group(function () {
 		->middleware('permission:materials.requests.approve');
 	Route::post('/materials/requests/{id}/deliver', [MaterialController::class, 'deliver'])
 		->middleware('permission:materials.requests.deliver,inventory.movements.transfers');
+	Route::post('/materials/deliveries/{id}/confirm-reception', [MaterialController::class, 'confirmReception'])
+		->middleware('permission:materials.deliveries.confirm');
 
 	// Kanban
 	Route::get('/kanban', [KanbanController::class, 'board'])

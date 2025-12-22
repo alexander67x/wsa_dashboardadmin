@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Services\ResendMailService;
 use App\Models\KanbanBoard;
 use App\Models\KanbanColumn;
 use App\Models\Proyecto;
@@ -68,6 +69,10 @@ class Planificacion extends Page
                 ->unique();
 
         $tarea->responsables()->sync($validos->all());
+
+        $tarea->loadMissing(['responsables', 'proyecto']);
+        $this->notifyTaskResponsables($tarea, 'updated');
+
         $this->refreshData();
     }
 
@@ -163,6 +168,8 @@ class Planificacion extends Page
         ]);
 
         $tarea->responsables()->sync($validos->all());
+        $tarea->loadMissing(['responsables', 'proyecto']);
+        $this->notifyTaskResponsables($tarea, 'created');
 
         $this->refreshData();
         $this->nuevoTitulo = null;
@@ -206,5 +213,34 @@ class Planificacion extends Page
             'Hecho' => 'finalizada',
             default => $estadoActual,
         };
+    }
+
+    protected function notifyTaskResponsables(Tarea $tarea, string $context): void
+    {
+        $resend = app(ResendMailService::class);
+
+        $projectName = $tarea->proyecto?->nombre_ubicacion ?? $tarea->cod_proy;
+        $taskTitle = $tarea->titulo;
+
+        $subjectPrefix = match ($context) {
+            'created' => 'Nueva tarea asignada',
+            'updated' => 'Actualización de tarea',
+            default => 'Tarea',
+        };
+
+        foreach ($tarea->responsables as $responsable) {
+            if (! $responsable->email) {
+                continue;
+            }
+
+            $subject = "{$subjectPrefix}: {$taskTitle}";
+            $html = "<p>Hola {$responsable->nombre_completo},</p>"
+                . "<p>La tarea <strong>{$taskTitle}</strong> en el proyecto "
+                . "<strong>{$projectName}</strong> ha sido "
+                . ($context === 'created' ? 'asignada' : 'actualizada')
+                . ".</p>";
+
+            $resend->send($responsable->email, $subject, $html);
+        }
     }
 }

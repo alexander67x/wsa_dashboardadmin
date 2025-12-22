@@ -60,7 +60,33 @@
             ])
         @else
             <div class="rounded-2xl border border-gray-200 bg-white p-4 shadow-sm dark:border-gray-800 dark:bg-gray-900">
-                @livewire('app.filament.widgets.seguimiento-calendar-widget', [], key('seguimiento-calendar'))
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <p class="text-sm font-medium text-slate-700 dark:text-slate-200">
+                            Filtro de proyecto
+                        </p>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">
+                            Muestra solo las tareas del proyecto seleccionado.
+                        </p>
+                    </div>
+                    <x-filament::input.wrapper class="w-full max-w-xs">
+                        <x-filament::input.select
+                            wire:model.live="calendarProject"
+                            placeholder="Todos los proyectos"
+                        >
+                            <option value="">Todos los proyectos</option>
+                            @foreach ($projectOptions as $project)
+                                <option value="{{ $project['value'] }}">
+                                    {{ $project['label'] }}
+                                </option>
+                            @endforeach
+                        </x-filament::input.select>
+                    </x-filament::input.wrapper>
+                </div>
+
+                @livewire('app.filament.widgets.seguimiento-calendar-widget', [
+                    'project' => $calendarProject,
+                ], key('seguimiento-calendar-' . ($calendarProject ?? 'all')))
             </div>
         @endif
     </div>

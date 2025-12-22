@@ -7,6 +7,7 @@ use App\Models\Archivo;
 use App\Models\ReporteAvanceTarea;
 use App\Models\ReporteMaterial;
 use App\Models\Tarea;
+use App\Services\ResendMailService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -129,7 +130,9 @@ class ReportController extends Controller
             return $report;
         });
 
-        $report->load(['proyecto', 'registradoPor']);
+        $report->load(['proyecto.responsable', 'registradoPor', 'tarea.responsables', 'tarea.supervisor']);
+
+        $this->notifyReportCreated($report);
 
         return response()->json([
             'id' => (string) $report->getKey(),
@@ -195,6 +198,46 @@ class ReportController extends Controller
         ];
     }
 
+    protected function notifyReportCreated(ReporteAvanceTarea $report): void
+    {
+        $resend = app(ResendMailService::class);
+
+        $projectName = $report->proyecto?->nombre_ubicacion ?? $report->cod_proy;
+        $taskTitle = $report->tarea?->titulo ?? 'Tarea';
+
+        $recipients = collect();
+
+        if ($report->tarea && $report->tarea->supervisor) {
+            $recipients->push($report->tarea->supervisor);
+        }
+
+        if ($report->tarea && $report->tarea->responsables) {
+            $recipients = $recipients->merge($report->tarea->responsables);
+        }
+
+        if ($report->proyecto && $report->proyecto->responsable) {
+            $recipients->push($report->proyecto->responsable);
+        }
+
+        $recipients = $recipients
+            ->filter(fn ($empleado) => $empleado && $empleado->email)
+            ->unique('email');
+
+        if ($recipients->isEmpty()) {
+            return;
+        }
+
+        foreach ($recipients as $destinatario) {
+            $subject = "Nuevo reporte en {$projectName} - {$taskTitle}";
+            $html = "<p>Hola {$destinatario->nombre_completo},</p>"
+                . "<p>Se registró un nuevo reporte de avance para la tarea "
+                . "<strong>{$taskTitle}</strong> en el proyecto "
+                . "<strong>{$projectName}</strong>.</p>";
+
+            $resend->send($destinatario->email, $subject, $html);
+        }
+    }
+
     protected function mapEstadoToStatus(?string $estado): string
     {
         return match ($estado) {
@@ -214,4 +257,3 @@ class ReportController extends Controller
         };
     }
 }
-

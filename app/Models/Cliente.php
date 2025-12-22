@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use App\Models\Archivo;
+use App\Models\ReunionCliente;
 
 class Cliente extends Model
 {
@@ -40,5 +41,10 @@ class Cliente extends Model
     {
         return $this->hasMany(Archivo::class, 'entidad_id', 'cod_cliente')
             ->where('entidad', 'clientes');
+    }
+
+    public function reuniones(): HasMany
+    {
+        return $this->hasMany(ReunionCliente::class, 'cliente_id', 'cod_cliente');
     }
 }

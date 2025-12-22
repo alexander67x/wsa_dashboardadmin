@@ -17,6 +17,7 @@ class Seguimiento extends Page
     public array $projectOptions = [];
     public array $projectSeries = [];
     public ?string $defaultProject = null;
+    public ?string $calendarProject = null;
 
     public function mount(SeguimientoService $service): void
     {
