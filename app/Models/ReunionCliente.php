@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use App\Models\Empleado;
 
 class ReunionCliente extends Model
 {
@@ -18,6 +19,7 @@ class ReunionCliente extends Model
         'acuerdos',
         'proximo_seguimiento',
         'responsable_interno',
+        'responsable_interno_id',
         'medio',
     ];
 
@@ -29,5 +31,10 @@ class ReunionCliente extends Model
     public function cliente(): BelongsTo
     {
         return $this->belongsTo(Cliente::class, 'cliente_id', 'cod_cliente');
+    }
+
+    public function responsableInterno(): BelongsTo
+    {
+        return $this->belongsTo(Empleado::class, 'responsable_interno_id', 'cod_empleado');
     }
 }

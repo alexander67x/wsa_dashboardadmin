@@ -63,6 +63,11 @@ class TareaSeeder extends Seeder
                 continue;
             }
 
+            if ($proyecto->cod_proy === 'SEG-HIDRO-004') {
+                $this->seedHydroProjectTasks($proyecto, $empleados, $hitos);
+                continue;
+            }
+
             $numTareas = rand(6, 12);
             
             for ($i = 1; $i <= $numTareas; $i++) {
@@ -119,5 +124,62 @@ class TareaSeeder extends Seeder
         }
         
         $this->command->info('Se han creado tareas de ejemplo para los proyectos existentes.');
+    }
+
+    private function seedHydroProjectTasks(Proyecto $proyecto, $empleados, $hitos): void
+    {
+        $schedule = [
+            ['week_offset' => 8, 'planned' => 6, 'completed' => 4],
+            ['week_offset' => 9, 'planned' => 6, 'completed' => 5],
+            ['week_offset' => 10, 'planned' => 6, 'completed' => 3],
+            ['week_offset' => 11, 'planned' => 6, 'completed' => 6],
+            ['week_offset' => 12, 'planned' => 7, 'completed' => 4],
+            ['week_offset' => 13, 'planned' => 7, 'completed' => 5],
+            ['week_offset' => 14, 'planned' => 7, 'completed' => 6],
+            ['week_offset' => 15, 'planned' => 7, 'completed' => 6],
+            ['week_offset' => 16, 'planned' => 7, 'completed' => 5],
+            ['week_offset' => 17, 'planned' => 7, 'completed' => 7],
+        ];
+
+        $prioridades = ['baja', 'media', 'alta'];
+        $estados = ['en_proceso', 'finalizada'];
+        $inicio = Carbon::now()->startOfYear();
+        $taskIndex = 1;
+
+        foreach ($schedule as $weekIndex => $slot) {
+            $semanaInicio = $inicio->copy()->addWeeks($slot['week_offset'])->startOfWeek();
+            $hito = $hitos[$weekIndex % $hitos->count()];
+
+            for ($i = 0; $i < $slot['planned']; $i++) {
+                $startDate = $semanaInicio->copy()->addDays($i % 5);
+                $isCompleted = $i < $slot['completed'];
+                $endDate = $isCompleted ? $startDate->copy()->addDays(2) : null;
+                $estado = $isCompleted ? 'finalizada' : 'en_proceso';
+                $prioridad = $prioridades[$taskIndex % count($prioridades)];
+
+                $responsables = $empleados
+                    ->random(min(2, $empleados->count()))
+                    ->pluck('cod_empleado')
+                    ->unique()
+                    ->toArray();
+
+                $tarea = Tarea::create([
+                    'cod_proy' => $proyecto->cod_proy,
+                    'id_hito' => $hito->id_hito,
+                    'titulo' => 'Fase ' . ($weekIndex + 1) . ' - Actividad ' . $taskIndex,
+                    'descripcion' => 'Actividad planificada para el complejo hidroeléctrico.',
+                    'estado' => $estado,
+                    'prioridad' => $prioridad,
+                    'fecha_inicio' => $startDate,
+                    'fecha_fin' => $endDate,
+                    'duracion_dias' => $endDate ? $startDate->diffInDays($endDate) : null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+
+                $tarea->responsables()->sync($responsables);
+                $taskIndex++;
+            }
+        }
     }
 }

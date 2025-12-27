@@ -3,6 +3,8 @@
 namespace App\Filament\Resources\Clientes\RelationManagers;
 
 use Filament\Forms\Components\DateTimePicker;
+use App\Models\Empleado;
+use Filament\Forms\Components\Select;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -12,6 +14,7 @@ use Filament\Tables\Table;
 use Filament\Actions\CreateAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\DeleteAction;
+use Filament\Tables\Columns\Layout\Panel;
 
 class ReunionesRelationManager extends RelationManager
 {
@@ -49,9 +52,12 @@ class ReunionesRelationManager extends RelationManager
                 ->label('Próximo seguimiento')
                 ->seconds(false),
 
-            TextInput::make('responsable_interno')
+            Select::make('responsable_interno_id')
                 ->label('Responsable interno')
-                ->maxLength(255),
+                ->relationship('responsableInterno', 'nombre_completo')
+                ->searchable()
+                ->preload()
+                ->required(),
 
             TextInput::make('medio')
                 ->label('Medio')
@@ -76,8 +82,9 @@ class ReunionesRelationManager extends RelationManager
                     ->label('Tema')
                     ->limit(40)
                     ->wrap(),
-                Tables\Columns\TextColumn::make('responsable_interno')
+                Tables\Columns\TextColumn::make('responsableInterno.nombre_completo')
                     ->label('Responsable interno')
+                    ->formatStateUsing(fn ($state, $record) => $state ?? $record->responsable_interno)
                     ->limit(30),
                 Tables\Columns\TextColumn::make('medio')
                     ->label('Medio')
@@ -86,6 +93,19 @@ class ReunionesRelationManager extends RelationManager
                     ->label('Próximo seguimiento')
                     ->dateTime('d/m/Y H:i')
                     ->sortable(),
+                Panel::make([
+                    Tables\Columns\TextColumn::make('descripcion')
+                        ->label('Descripción')
+                        ->wrap()
+                        ->placeholder('Sin descripción'),
+                    Tables\Columns\TextColumn::make('acuerdos')
+                        ->label('Acuerdos')
+                        ->wrap()
+                        ->placeholder('Sin acuerdos'),
+                ])
+                    ->collapsed()
+                    ->collapsible()
+                    ->columnSpanFull(),
             ])
             ->headerActions([
                 CreateAction::make()
@@ -100,5 +120,26 @@ class ReunionesRelationManager extends RelationManager
             ->emptyStateHeading('Sin reuniones registradas')
             ->emptyStateDescription('Registra las reuniones de seguimiento, kickoff o cierre que tengas con este cliente.');
     }
-}
 
+    protected function mutateFormDataBeforeCreate(array $data): array
+    {
+        return $this->syncResponsableNombre($data);
+    }
+
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        return $this->syncResponsableNombre($data);
+    }
+
+    private function syncResponsableNombre(array $data): array
+    {
+        if (! empty($data['responsable_interno_id'])) {
+            $empleado = Empleado::find($data['responsable_interno_id']);
+            $data['responsable_interno'] = $empleado?->nombre_completo;
+        } else {
+            $data['responsable_interno'] = null;
+        }
+
+        return $data;
+    }
+}

@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Proyecto;
 use App\Models\Tarea;
+use App\Models\Fase;
+use App\Models\Hito;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
 
@@ -50,7 +52,16 @@ class SeguimientoService
     {
         $proyectos = Proyecto::query()
             ->with([
-                'tareas:id_tarea,cod_proy,titulo,fecha_inicio,fecha_fin,estado',
+                'tareas' => function ($query) {
+                    $query
+                        ->select('id_tarea', 'cod_proy', 'id_fase', 'id_hito', 'titulo', 'fecha_inicio', 'fecha_fin', 'estado')
+                        ->with([
+                            'fase:id_fase,nombre_fase',
+                            'hito:id_hito,id_fase,titulo',
+                        ]);
+                },
+                'fases:id_fase,cod_proy,nombre_fase,fecha_inicio,fecha_fin,orden',
+                'hitos:id_hito,cod_proy,id_fase,titulo,fecha_hito,fecha_final_hito,es_critico,estado',
             ])
             ->orderBy('cod_proy')
             ->get([
@@ -70,6 +81,44 @@ class SeguimientoService
 
         $tasksByProject = $proyectos->mapWithKeys(function (Proyecto $proyecto) {
             $nombre = $proyecto->nombre_ubicacion ?? $proyecto->descripcion ?? $proyecto->cod_proy;
+            $phases = $proyecto->fases
+                ? $proyecto->fases
+                    ->map(function (Fase $fase, int $index) {
+                        return [
+                            'id' => $fase->getKey(),
+                            'name' => $fase->nombre_fase ?: 'Fase '.($index + 1),
+                            'start' => optional($fase->fecha_inicio)->format('Y-m-d'),
+                            'end' => optional($fase->fecha_fin)->format('Y-m-d'),
+                            'order' => $fase->orden,
+                        ];
+                    })
+                    ->sortBy(function (array $phase) {
+                        $order = $phase['order'] ?? null;
+                        $start = $phase['start'] ?? null;
+
+                        return sprintf('%05d-%s', (int) ($order ?? 99999), $start ?? '9999-12-31');
+                    })
+                    ->values()
+                    ->all()
+                : [];
+
+            $milestones = $proyecto->hitos
+                ? $proyecto->hitos
+                    ->map(function (Hito $hito) {
+                        $date = $hito->fecha_hito ?? $hito->fecha_final_hito;
+
+                        return [
+                            'id' => $hito->getKey(),
+                            'fase_id' => $hito->id_fase,
+                            'name' => $hito->titulo ?: 'Hito '.$hito->getKey(),
+                            'date' => $date ? $date->format('Y-m-d') : null,
+                            'is_critical' => (bool) $hito->es_critico,
+                            'status' => $hito->estado,
+                        ];
+                    })
+                    ->values()
+                    ->all()
+                : [];
 
             return [
                 $proyecto->cod_proy => [
@@ -79,6 +128,8 @@ class SeguimientoService
                         ->filter()
                         ->values()
                         ->all(),
+                    'phases' => $phases,
+                    'milestones' => $milestones,
                 ],
             ];
         });
@@ -110,6 +161,7 @@ class SeguimientoService
         $curvePercentages = [];
         $detail = [];
         $acumuladoCompletadas = 0;
+        $plannedCurvePercentages = [];
 
         foreach ($planificaciones as $plan) {
             $weekPeriod = $this->getWeekPeriod((int) $plan->año, (int) $plan->semana);
@@ -123,13 +175,8 @@ class SeguimientoService
             $acumuladoCompletadas += $completedTasks;
             $totalPercent = round(min(100, ($acumuladoCompletadas / $totalTareas) * 100), 2);
 
-            $realLine = null;
-            if (isset($plan->ejecuciones)) {
-                $realLine = $plan->ejecuciones->avg('avance_real_porcentaje');
-            }
-            $curvePercent = $realLine !== null
-                ? round((float) $realLine, 2)
-                : $totalPercent;
+            $curvePercent = $totalPercent;
+            $plannedCurve = round((float) ($plan->avance_esperado_porcentaje ?? 0), 2);
 
             $label = sprintf('Semana %02d', $plan->semana);
             if ($hasMultipleYears) {
@@ -140,11 +187,12 @@ class SeguimientoService
             $weeklyPercentages[] = $weeklyPercent;
             $totalPercentages[] = $totalPercent;
             $curvePercentages[] = $curvePercent;
+            $plannedCurvePercentages[] = $plannedCurve;
 
             $detail[] = [
                 'semana' => $label,
                 'planificado' => round((float) ($plan->avance_esperado_porcentaje ?? 0), 2),
-                'avance_real' => $realLine !== null ? round((float) $realLine, 2) : null,
+                'avance_real' => $curvePercent,
                 'tareas_planificadas' => $plannedTasks,
                 'tareas_completadas' => $completedTasks,
                 'cumplimiento_tareas' => $weeklyPercent,
@@ -161,6 +209,7 @@ class SeguimientoService
             'weekly' => $weeklyPercentages,
             'total' => $totalPercentages,
             'curve' => $curvePercentages,
+            'planned' => $plannedCurvePercentages,
             'detail' => $detail,
         ];
     }
@@ -261,6 +310,10 @@ class SeguimientoService
             'status' => $tarea->estado ?? 'sin estado',
             'progress' => $this->inferProgress($tarea->estado),
             'duration_days' => $inicio->diffInDays($fin) + 1,
+            'fase_id' => $tarea->id_fase,
+            'hito_id' => $tarea->id_hito,
+            'fase' => optional($tarea->fase)->nombre_fase,
+            'hito' => optional($tarea->hito)->titulo,
         ];
     }
 

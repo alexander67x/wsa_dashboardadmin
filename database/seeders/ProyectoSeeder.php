@@ -119,6 +119,21 @@ class ProyectoSeeder extends Seeder
                 'gasto_real' => 50000.00,
                 'rentabilidad' => 22,
             ],
+            [
+                'cod_proy' => 'SEG-HIDRO-004',
+                'nombre_ubicacion' => 'Complejo Hidroeléctrico Valles Unidos',
+                'direccion' => 'Carretera Potosí - Tarija km 85',
+                'ciudad' => 'Potosí',
+                'pais' => 'Bolivia',
+                'latitud' => -19.5833333,
+                'longitud' => -65.7500000,
+                'fecha_inicio' => Carbon::now()->startOfYear()->addWeeks(8),
+                'fecha_fin_estimada' => Carbon::now()->startOfYear()->addWeeks(20),
+                'descripcion' => 'Montaje de turbinas, obras civiles y sistema de control del nuevo complejo hidroeléctrico.',
+                'avance_financiero' => 125000.00,
+                'gasto_real' => 32500.00,
+                'rentabilidad' => 27,
+            ],
         ];
 
         foreach ($proyectos as $proyectoData) {
@@ -140,4 +155,3 @@ class ProyectoSeeder extends Seeder
         $this->command->info('✔ Proyectos de seguridad activos creados/actualizados: ' . count($proyectos));
     }
 }
-

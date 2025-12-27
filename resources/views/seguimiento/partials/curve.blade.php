@@ -367,6 +367,20 @@
                     order: 3,
                     fill: false,
                 },
+                {
+                    type: 'line',
+                    label: 'Curva de avance planificado',
+                    data: serie?.planned ?? [],
+                    borderColor: '#6366f1',
+                    backgroundColor: 'transparent',
+                    borderWidth: 3,
+                    borderDash: [6, 6],
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    tension: 0.25,
+                    order: 3,
+                    fill: false,
+                },
             ]);
 
             const renderChart = (projectCode) => {
