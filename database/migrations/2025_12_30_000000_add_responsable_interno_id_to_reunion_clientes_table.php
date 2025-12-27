@@ -10,7 +10,7 @@ return new class extends Migration
     {
         Schema::table('reunion_clientes', function (Blueprint $table) {
             if (! Schema::hasColumn('reunion_clientes', 'responsable_interno_id')) {
-                $table->unsignedInteger('responsable_interno_id')
+                $table->integer('responsable_interno_id')
                     ->nullable()
                     ->after('proximo_seguimiento')
                     ->index();
