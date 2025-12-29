@@ -2,11 +2,13 @@
 
 namespace App\Filament\Resources\Clientes\Tables;
 
+use App\Models\Cliente;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
 use Filament\Actions\ForceDeleteBulkAction;
 use Filament\Actions\RestoreBulkAction;
+use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\TrashedFilter;
@@ -48,6 +50,21 @@ class ClientesTable
                 TrashedFilter::make(),
             ])
             ->recordActions([
+                ViewAction::make('preview')
+                    ->label('Vista previa')
+                    ->modalHeading(fn (Cliente $record): string => 'Cliente: '.$record->nombre_cliente)
+                    ->modalContent(function (Cliente $record) {
+                        $cliente = $record
+                            ->loadCount(['proyectos', 'reuniones'])
+                            ->load([
+                                'archivos' => fn ($query) => $query->latest('id_archivo')->limit(5),
+                            ]);
+
+                        return view('filament.resources.clientes.preview', [
+                            'cliente' => $cliente,
+                        ]);
+                    })
+                    ->modalWidth('4xl'),
                 EditAction::make(),
             ])
             ->toolbarActions([
