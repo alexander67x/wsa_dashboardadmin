@@ -154,7 +154,7 @@ class ReporteForm
                 
                 // Aprobación (solo visible si está aprobado/rechazado)
                 TextInput::make('aprobado_por_nombre')
-                    ->label('Aprobado por')
+                    ->label('Revisado por')
                     ->disabled()
                     ->dehydrated(false)
                     ->formatStateUsing(function ($state, $record) {
@@ -162,12 +162,17 @@ class ReporteForm
                             return '—';
                         }
                         $record->loadMissing('aprobadoPor');
-                        return $record->aprobadoPor?->nombre_completo ?? '—';
+                        if (! in_array($record->estado ?? null, ['aprobado', 'rechazado'])) {
+                            return '—';
+                        }
+
+                        $prefix = $record->estado === 'aprobado' ? 'Aprobado por: ' : 'Rechazado por: ';
+                        return $prefix . ($record->aprobadoPor?->nombre_completo ?? '—');
                     })
                     ->visible(fn ($record) => $record && in_array($record->estado ?? '', ['aprobado', 'rechazado'])),
                 
                 TextInput::make('fecha_aprobacion')
-                    ->label('Fecha de Aprobación')
+                    ->label('Fecha de Revisión')
                     ->disabled()
                     ->dehydrated(false)
                     ->formatStateUsing(function ($state) {

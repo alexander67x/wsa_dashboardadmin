@@ -60,15 +60,34 @@ class ReportesTable
                     ->sortable(),
                 
                 TextColumn::make('aprobadoPor.nombre_completo')
-                    ->label('Aprobado por')
-                    ->default('—')
+                    ->label('Revisado por')
+                    ->formatStateUsing(function ($state, $record) {
+                        if (! $record || ! in_array($record->estado ?? null, ['aprobado', 'rechazado'])) {
+                            return '—';
+                        }
+
+                        $prefix = $record->estado === 'aprobado' ? 'Aprobado por: ' : 'Rechazado por: ';
+                        return $state ? $prefix . $state : $prefix . '—';
+                    })
                     ->sortable()
                     ->toggleable(),
                 
                 TextColumn::make('fecha_aprobacion')
-                    ->label('Fecha de Aprobación')
-                    ->dateTime('d/m/Y H:i')
-                    ->default('—')
+                    ->label('Fecha de Revisión')
+                    ->formatStateUsing(function ($state, $record) {
+                        if (! $record || ! in_array($record->estado ?? null, ['aprobado', 'rechazado'])) {
+                            return '—';
+                        }
+
+                        if (! $state) {
+                            return '—';
+                        }
+
+                        $date = $state instanceof \Illuminate\Support\Carbon ? $state : \Illuminate\Support\Carbon::parse($state);
+
+                        $prefix = $record->estado === 'aprobado' ? 'Aprobado el ' : 'Rechazado el ';
+                        return $prefix . $date->format('d/m/Y H:i');
+                    })
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])

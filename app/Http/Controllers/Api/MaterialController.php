@@ -12,6 +12,7 @@ use App\Models\MaterialDelivery;
 use App\Models\SolicitudHistorial;
 use App\Services\OneSignalService;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 
 class MaterialController extends Controller
 {
@@ -195,12 +196,19 @@ class MaterialController extends Controller
 
 	public function store(Request $request)
 	{
+		Log::debug('materials.requests payload', $request->all());
+
 		$data = $request->validate([
-			'projectId' => ['required', 'string', 'exists:proyectos,cod_proy'],
-			'items' => ['required', 'array', 'min:1'],
-			'items.*.materialId' => ['required'],
-			'items.*.qty' => ['required', 'numeric', 'min:0.01'],
-		]);
+				'projectId' => ['required', 'string', 'exists:proyectos,cod_proy'],
+				'taskId' => ['nullable', 'integer', 'exists:tareas,id_tarea'],
+				'requiredDate' => ['nullable', 'date'],
+				'reason' => ['nullable', 'string', 'max:500'],
+				'observations' => ['nullable', 'string', 'max:1000'],
+				'urgent' => ['nullable', 'boolean'],
+				'items' => ['required', 'array', 'min:1'],
+				'items.*.materialId' => ['required'],
+				'items.*.qty' => ['required', 'numeric', 'min:0.01'],
+			]);
 
 		// Obtener usuario logueado
 		$user = $request->user();

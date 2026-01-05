@@ -86,7 +86,6 @@ class EmpleadoSeeder extends Seeder
                 'user' => [
                     'email' => 'personal@empresa.com',
                     'name' => 'Personal de Obra',
-                    'password' => 'personal123',
                 ],
             ],
         ];

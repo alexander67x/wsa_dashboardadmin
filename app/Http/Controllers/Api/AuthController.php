@@ -112,6 +112,8 @@ class AuthController extends Controller
 				'id' => (string) $empleado->cod_empleado,
 				'name' => $empleado->nombre_completo,
 				'position' => $empleado->cargo,
+				'email' => $empleado->email,
+				'phone' => $empleado->telefono,
 			] : null,
 		];
 	}
