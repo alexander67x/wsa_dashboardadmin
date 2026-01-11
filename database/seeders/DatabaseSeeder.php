@@ -31,6 +31,7 @@ class DatabaseSeeder extends Seeder
             ReporteSeeder::class,           // Reportes (después de tareas)
             SolicitudMaterialSeeder::class, // Solicitudes de Materiales
             IncidenciaSeeder::class,        // Incidencias (después de tareas y empleados)
+            AttendanceSeeder::class,        // Asistencia demo
         ]);
     }
 }

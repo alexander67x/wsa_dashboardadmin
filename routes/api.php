@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\MaterialController;
 use App\Http\Controllers\Api\KanbanController;
 use App\Http\Controllers\Api\PushController;
 use App\Http\Controllers\Api\TaskController;
+use App\Http\Controllers\Api\AttendanceController;
 
 Route::post('/auth/login', [AuthController::class, 'login']);
 
@@ -38,6 +39,10 @@ Route::middleware('auth:sanctum')->group(function () {
 		->middleware('permission:reports.view,projects.my.view');
 	Route::post('/reports', [ReportController::class, 'store'])
 		->middleware('permission:reports.create,mobile.tasks.execute');
+	Route::post('/reports/{id}/resubmit', [ReportController::class, 'resubmit'])
+		->middleware('permission:reports.create,mobile.tasks.execute');
+	Route::post('/reports/{id}/approve', [ReportController::class, 'approve'])
+		->middleware('permission:reports.approve');
 
 	// Incidencias
 	Route::get('/incidencias', [IncidenciaController::class, 'index'])
@@ -54,6 +59,11 @@ Route::middleware('auth:sanctum')->group(function () {
 		->middleware('permission:tasks.view,projects.my.view');
 	Route::post('/tasks/{id}/assign-to-me', [TaskController::class, 'assignToMe'])
 		->middleware('permission:mobile.tasks.execute,tasks.assign');
+
+	// Attendance
+	Route::get('/attendance/checks', [AttendanceController::class, 'index']);
+	Route::post('/attendance/checks', [AttendanceController::class, 'store']);
+	Route::get('/attendance/checks/{id}', [AttendanceController::class, 'show']);
 
 	// Materials
 	Route::get('/materials/catalog', [MaterialController::class, 'catalog'])

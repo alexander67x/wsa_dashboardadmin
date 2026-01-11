@@ -2,7 +2,7 @@
     @push('styles')
         <style>
             /* ============================================
-               KANBAN BOARD STYLES
+               ESTILOS DEL TABLERO KANBAN
                ============================================ */
             
             .kanban-wrapper {
@@ -53,7 +53,7 @@
                 background-color: #6b7280;
             }
 
-            /* Kanban Column Styles */
+            /* Estilos de columnas Kanban */
             .kanban-column {
                 background-color: white;
                 border-radius: 0.75rem;
@@ -137,7 +137,7 @@
                 border-color: #d97706;
             }
 
-            /* Kanban Card Styles */
+            /* Estilos de tarjetas Kanban */
             .kanban-card {
                 background-color: white;
                 border-radius: 0.5rem;
@@ -202,7 +202,7 @@
                 background-color: rgba(31, 41, 55, 0.5);
             }
 
-            /* Priority Badges */
+            /* Insignias de prioridad */
             .priority-badge {
                 display: inline-flex;
                 align-items: center;
@@ -244,7 +244,7 @@
                 color: #6ee7b7;
             }
 
-            /* Empty States */
+            /* Estados vacios */
             .empty-state {
                 display: flex;
                 flex-direction: column;
@@ -263,7 +263,7 @@
                 border-color: #374151;
             }
 
-            /* Responsive */
+            /* Responsivo */
             @media (max-width: 768px) {
                 .kanban-column {
                     min-width: 280px;
@@ -275,15 +275,15 @@
                 }
             }
             
-            /* Icon sizing overrides (scoped to this page) */
-            /* General cap to avoid oversized SVGs regardless of utility classes */
+            /* Ajustes de tamano de iconos (solo para esta pagina) */
+            /* Limite general para evitar SVGs sobredimensionados independientemente de las clases utilitarias */
             .planificacion-page svg { max-width: 1.5rem; max-height: 1.5rem; height: auto; }
-            /* Increased specificity to beat global rules using duplicated class selectors */
+            /* Mayor especificidad para superar reglas globales usando selectores de clase duplicados */
             .planificacion-page svg.w-6.w-6, .planificacion-page svg.h-6.h-6 { width: 1.5rem !important; height: 1.5rem !important; }
             .planificacion-page svg.w-5.w-5, .planificacion-page svg.h-5.h-5 { width: 1.25rem !important; height: 1.25rem !important; }
             .planificacion-page svg.w-4.w-4, .planificacion-page svg.h-4.h-4 { width: 1rem !important; height: 1rem !important; }
             .planificacion-page svg.inline { display: inline-block; vertical-align: middle; }
-            /* Hard cap for common containers regardless of classes */
+            /* Limite estricto para contenedores comunes independientemente de las clases */
             .planificacion-page label svg,
             .planificacion-page button svg,
             .planificacion-page .kanban-column-header svg {
@@ -294,10 +294,10 @@
     @endpush
     
     <div class="planificacion-page space-y-6">
-        <!-- Header Section -->
+        <!-- Seccion de encabezado -->
         <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 overflow-hidden">
             <div class="p-6">
-                <!-- Project Selector -->
+                <!-- Selector de proyecto -->
                 <div class="mb-6">
                     <label class="flex items-center gap-2 text-sm font-semibold text-gray-700 dark:text-gray-300 mb-3">
                         <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -323,7 +323,7 @@
                 </div>
 
                 @if($codProy)
-                    <!-- Quick Task Creation Form -->
+                    <!-- Formulario rapido de creacion de tareas -->
                     <div class="bg-gradient-to-r from-amber-50 to-amber-100/50 dark:from-amber-900/20 dark:to-amber-800/20 
                                 rounded-lg p-4 border border-amber-200 dark:border-amber-800">
                         <div class="flex items-center gap-2 mb-4">
@@ -396,7 +396,7 @@
             </div>
         </div>
 
-        <!-- Kanban Board Section -->
+        <!-- Seccion del tablero Kanban -->
         @if($codProy && $board)
             <div class="kanban-wrapper">
                 <div class="kanban-container" x-data="{ draggedId: null }">

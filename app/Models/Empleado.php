@@ -56,6 +56,11 @@ class Empleado extends Model
                     ->withTimestamps();
     }
 
+    public function proyectosBasicos(): BelongsToMany
+    {
+        return $this->belongsToMany(Proyecto::class, 'asignaciones_proyecto', 'cod_empleado', 'cod_proy');
+    }
+
     public function asignaciones(): HasMany
     {
         return $this->hasMany(AsignacionProyecto::class, 'cod_empleado', 'cod_empleado');

@@ -72,6 +72,12 @@ class ReporteAvanceTarea extends Model
     {
         return $this->hasMany(ReporteMaterial::class, 'id_reporte', 'id_reporte');
     }
+
+    public function historiales(): HasMany
+    {
+        return $this->hasMany(ReporteHistorial::class, 'id_reporte', 'id_reporte')
+            ->orderByDesc('created_at');
+    }
 }
 
 

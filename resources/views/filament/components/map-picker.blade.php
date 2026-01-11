@@ -12,7 +12,7 @@
     >
         <div id="map-{{ $field->getStatePath() }}" class="w-full h-[500px] md:h-[600px] lg:h-[700px] xl:h-[800px] rounded-lg border border-gray-300 shadow-lg"></div>
         
-        <!-- Hidden inputs to sync with Filament -->
+        <!-- Inputs ocultos para sincronizar con Filament -->
         <input type="hidden" x-model="latitude" name="{{ $field->getStatePath() }}[latitude]" />
         <input type="hidden" x-model="longitude" name="{{ $field->getStatePath() }}[longitude]" />
     </div>
@@ -82,43 +82,43 @@ function mapPicker(config) {
         center: config.center,
         
         initMap() {
-            console.log('initMap called', { isInitialized, map: !!map, marker: !!marker });
+            console.log('initMap llamado', { isInitialized, map: !!map, marker: !!marker });
             
             if (isInitialized) {
-                console.log('Map already initialized, skipping...');
+                console.log('Mapa ya inicializado, se omite...');
                 return;
             }
             
             setTimeout(() => {
                 const mapContainer = document.getElementById('map-' + config.statePath);
-                console.log('Map container found:', !!mapContainer);
+                console.log('Contenedor del mapa encontrado:', !!mapContainer);
                 
                 if (!mapContainer) return;
                 
                 try {
-                    console.log('Initializing map...');
+                    console.log('Inicializando mapa...');
                     
-                    // Initialize map
+                    // Inicializar mapa
                     map = L.map('map-' + config.statePath, {
                         center: config.center,
                         zoom: config.zoom
                     });
                     
-                    // Add tile layer
+                    // Agregar capa de teselas
                     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                         attribution: '© OpenStreetMap contributors'
                     }).addTo(map);
                     
-                    // Add marker
+                    // Agregar marcador
                     marker = L.marker([config.latitude, config.longitude], {
                         draggable: true
                     }).addTo(map);
                     
-                    console.log('Map and marker created successfully');
+                    console.log('Mapa y marcador creados correctamente');
                     
-                    // Map click event
+                    // Evento de clic en el mapa
                     map.on('click', (e) => {
-                        console.log('Map clicked:', e.latlng);
+                        console.log('Clic en el mapa:', e.latlng);
                         const lat = e.latlng.lat.toFixed(7);
                         const lng = e.latlng.lng.toFixed(7);
                         
@@ -132,41 +132,41 @@ function mapPicker(config) {
                         this.updateHiddenInputs();
                     });
                     
-                    // Marker drag event
+                    // Evento de arrastre del marcador
                     marker.on('dragend', (e) => {
-                        console.log('Marker dragged:', e.target.getLatLng());
+                        console.log('Marcador arrastrado:', e.target.getLatLng());
                         const latlng = e.target.getLatLng();
                         this.latitude = latlng.lat.toFixed(7);
                         this.longitude = latlng.lng.toFixed(7);
                         this.updateHiddenInputs();
                     });
                     
-                    // Resize map
+                    // Redimensionar mapa
                     setTimeout(() => {
                         if (map) {
                             map.invalidateSize();
-                            console.log('Map resized');
+                            console.log('Mapa redimensionado');
                         }
                     }, 300);
                     
                     isInitialized = true;
-                    console.log('Map initialization completed');
+                    console.log('Inicializacion del mapa completada');
                     
-                    // Add listeners for Filament form fields
+                    // Agregar escuchas para campos del formulario de Filament
                     this.addFormFieldListeners();
                     
                 } catch (error) {
-                    console.error('Map initialization error:', error);
+                    console.error('Error al inicializar el mapa:', error);
                     isInitialized = false;
                 }
             }, 200);
         },
         
         updateMap() {
-            console.log('updateMap called', { map: !!map, marker: !!marker, lat: this.latitude, lng: this.longitude });
+            console.log('updateMap llamado', { map: !!map, marker: !!marker, lat: this.latitude, lng: this.longitude });
             
             if (!map || !marker) {
-                console.log('Map or marker not available, reinitializing...');
+                console.log('Mapa o marcador no disponible, reinicializando...');
                 this.initMap();
                 return;
             }
@@ -177,20 +177,20 @@ function mapPicker(config) {
             if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
                 marker.setLatLng([lat, lng]);
                 map.setView([lat, lng], map.getZoom());
-                // Update hidden inputs when map is updated from text fields
+                // Actualizar inputs ocultos cuando el mapa se actualiza desde los campos de texto
                 this.updateHiddenInputs();
             }
         },
         
         updateHiddenInputs() {
-            // Update hidden inputs for Filament
+            // Actualizar inputs ocultos para Filament
             const latInput = document.querySelector(`input[name="${config.statePath}[latitude]"]`);
             const lngInput = document.querySelector(`input[name="${config.statePath}[longitude]"]`);
             
             if (latInput) latInput.value = this.latitude;
             if (lngInput) lngInput.value = this.longitude;
             
-            // Update hidden Filament form fields (Ubicaciones)
+            // Actualizar campos ocultos del formulario de Filament (Ubicaciones)
             const latField = document.querySelector('input[name="latitud"]');
             const lngField = document.querySelector('input[name="longitud"]');
             
@@ -204,8 +204,8 @@ function mapPicker(config) {
                 lngField.dispatchEvent(new Event('input', { bubbles: true }));
             }
             
-            // (Compat) Update proyecto form fields if they exist using the new column names
-            // Prefer the unified `latitud` / `longitud` fields which are used by `proyectos`
+            // (Compat) Actualizar campos del formulario de proyecto si existen usando los nuevos nombres de columnas
+            // Preferir los campos unificados `latitud` / `longitud` que usa `proyectos`
             const latProyectoField = document.querySelector('input[name="latitud"]');
             const lngProyectoField = document.querySelector('input[name="longitud"]');
 
@@ -219,18 +219,18 @@ function mapPicker(config) {
                 lngProyectoField.dispatchEvent(new Event('input', { bubbles: true }));
             }
             
-            console.log('Updated form fields:', { lat: this.latitude, lng: this.longitude });
+            console.log('Campos del formulario actualizados:', { lat: this.latitude, lng: this.longitude });
         },
         
-        // Method to sync from Filament fields to map
+        // Metodo para sincronizar desde campos de Filament al mapa
         syncFromFormFields() {
-            // Check for Ubicaciones form fields
+            // Verificar campos del formulario de Ubicaciones
             const latField = document.querySelector('input[name="latitud"]');
             const lngField = document.querySelector('input[name="longitud"]');
             
             let lat, lng;
 
-            // Prefer `latitud`/`longitud` fields (unified in `proyectos`)
+            // Preferir campos `latitud`/`longitud` (unificados en `proyectos`)
             if (latField && lngField) {
                 lat = parseFloat(latField.value);
                 lng = parseFloat(lngField.value);
@@ -245,32 +245,32 @@ function mapPicker(config) {
                     map.setView([lat, lng], map.getZoom());
                 }
                 
-                console.log('Synced from form fields:', { lat, lng });
+                console.log('Sincronizado desde campos del formulario:', { lat, lng });
             }
         },
         
-        // Add event listeners to Filament form fields
+        // Agregar escuchas a los campos del formulario de Filament
         addFormFieldListeners() {
             setTimeout(() => {
-                // Listeners for Ubicaciones form
+                // Escuchas para formulario de Ubicaciones
                 const latField = document.querySelector('input[name="latitud"]');
                 const lngField = document.querySelector('input[name="longitud"]');
                 
                 if (latField) {
                     latField.addEventListener('input', () => {
-                        console.log('Latitude field changed:', latField.value);
+                        console.log('Campo de latitud cambiado:', latField.value);
                         this.syncFromFormFields();
                     });
                 }
 
                 if (lngField) {
                     lngField.addEventListener('input', () => {
-                        console.log('Longitude field changed:', lngField.value);
+                        console.log('Campo de longitud cambiado:', lngField.value);
                         this.syncFromFormFields();
                     });
                 }
                 
-                console.log('Form field listeners added');
+                console.log('Escuchas de campos agregadas');
             }, 500);
         }
     }

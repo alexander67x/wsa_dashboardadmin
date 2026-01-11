@@ -4,8 +4,8 @@ namespace App\Filament\Resources\Almacenes\RelationManagers;
 
 use App\Models\Material;
 use Filament\Resources\RelationManagers\RelationManager;
-use Filament\Schemas\Components\Select;
-use Filament\Schemas\Components\TextInput;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Schema;
 use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;

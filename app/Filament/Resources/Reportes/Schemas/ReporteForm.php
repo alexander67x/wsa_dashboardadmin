@@ -198,6 +198,32 @@ class ReporteForm
                     ->rows(3)
                     ->default('—')
                     ->visible(fn ($record) => $record && in_array($record->estado ?? '', ['aprobado', 'rechazado'])),
+
+                Textarea::make('historial_revisiones')
+                    ->label('Historial de Revisiones')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->columnSpanFull()
+                    ->rows(4)
+                    ->formatStateUsing(function ($state, $record) {
+                        if (!$record) {
+                            return '—';
+                        }
+                        $record->loadMissing('historiales.creadoPor');
+                        if (! $record->historiales || $record->historiales->isEmpty()) {
+                            return '—';
+                        }
+
+                        return $record->historiales->map(function ($historial) {
+                            $fecha = optional($historial->created_at)->format('d/m/Y H:i');
+                            $usuario = $historial->creadoPor?->nombre_completo ?? 'Sistema';
+                            $tipo = ucfirst($historial->tipo);
+                            $comentario = $historial->comentario ? " - {$historial->comentario}" : '';
+
+                            return "{$fecha} • {$tipo} por {$usuario}{$comentario}";
+                        })->implode("\n");
+                    })
+                    ->visible(fn ($record) => $record && $record->historiales && $record->historiales->isNotEmpty()),
                 
                 // Evidencias - Imágenes
                 ImageGallery::make('images_gallery')

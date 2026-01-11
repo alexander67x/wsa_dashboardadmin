@@ -166,6 +166,10 @@ return [
             'label' => 'Administrar empleados/usuarios',
             'module' => 'admin',
         ],
+        'attendance.view' => [
+            'label' => 'Consultar asistencia y jornadas',
+            'module' => 'asistencia',
+        ],
     ],
     'roles' => [
         'adquisiciones' => [
@@ -203,6 +207,7 @@ return [
                 'inventory.consumption.history',
                 'incidents.review.impact',
                 'reports.view',
+                'attendance.view',
             ],
         ],
         'responsable_proyecto' => [
@@ -223,6 +228,7 @@ return [
                 'materials.requests.create',
                 'materials.requests.view',
                 'materials.requests.approve',
+                'attendance.view',
             ],
         ],
         'supervisor' => [
@@ -242,6 +248,7 @@ return [
                 'reports.daily.close',
                 'inventory.view.project',
                 'incidents.view',
+                'attendance.view',
             ],
         ],
         'personal_obra' => [

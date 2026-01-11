@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Reportes\Pages;
 use App\Filament\Resources\Reportes\ReporteResource;
 use App\Models\Almacen;
 use App\Models\Empleado;
+use App\Models\ReporteHistorial;
 use App\Models\StockAlmacen;
 use App\Services\ResendMailService;
 use Filament\Actions\Action;
@@ -21,7 +22,7 @@ class ViewReporte extends ViewRecord
     protected function mutateFormDataBeforeFill(array $data): array
     {
         // Cargar relaciones necesarias
-        $this->record->load(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor', 'archivos', 'materiales.material']);
+        $this->record->load(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor', 'archivos', 'materiales.material', 'historiales.creadoPor']);
 
         return $data;
     }
@@ -209,6 +210,13 @@ class ViewReporte extends ViewRecord
                 'aprobado_por' => $empleado->cod_empleado,
             ]);
 
+            ReporteHistorial::create([
+                'id_reporte' => $this->record->getKey(),
+                'tipo' => 'rechazo',
+                'comentario' => $observaciones,
+                'creado_por' => $empleado->cod_empleado,
+            ]);
+
             DB::commit();
 
             Notification::make()
@@ -261,4 +269,3 @@ class ViewReporte extends ViewRecord
         $resend->send($destinatario->email, $subject, $html);
     }
 }
-

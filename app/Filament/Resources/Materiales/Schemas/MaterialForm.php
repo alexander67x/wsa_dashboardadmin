@@ -3,10 +3,14 @@
 namespace App\Filament\Resources\Materiales\Schemas;
 
 use App\Models\Almacen;
+use App\Models\Material;
+use App\Models\MaterialGrupo;
+use App\Models\MaterialSubgrupo;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class MaterialForm
@@ -29,20 +33,101 @@ class MaterialForm
                     ->maxLength(255)
                     ->columnSpan(1),
 
-                Select::make('id_subgrupo')
-                    ->label('Subgrupo')
-                    ->relationship('subgrupo', 'nombre')
+                Select::make('id_grupo')
+                    ->label('Grupo')
+                    ->options(fn () => MaterialGrupo::orderBy('nombre')->pluck('nombre', 'id_grupo')->toArray())
                     ->searchable()
                     ->preload()
+                    ->live()
                     ->required()
+                    ->dehydrated(false)
                     ->createOptionForm([
-                        TextInput::make('codigo_subgrupo')
-                            ->label('Código')
-                            ->required(),
                         TextInput::make('nombre')
                             ->label('Nombre')
                             ->required(),
                     ])
+                    ->createOptionUsing(function (array $data): int {
+                        $lastCode = MaterialGrupo::query()
+                            ->orderByDesc('id_grupo')
+                            ->value('codigo_grupo');
+
+                        $nextNumber = 1;
+                        if ($lastCode && preg_match('/GRP-(\d+)/', $lastCode, $matches)) {
+                            $nextNumber = ((int) $matches[1]) + 1;
+                        }
+
+                        $codigo = 'GRP-'.str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+
+                        $grupo = MaterialGrupo::create([
+                            'codigo_grupo' => $codigo,
+                            'nombre' => $data['nombre'],
+                        ]);
+
+                        return $grupo->getKey();
+                    })
+                    ->afterStateUpdated(function (Set $set) {
+                        $set('id_subgrupo', null);
+                    })
+                    ->afterStateHydrated(function (Select $component, $state, ?Material $record): void {
+                        if (! $record?->subgrupo?->id_grupo) {
+                            return;
+                        }
+
+                        $component->state((string) $record->subgrupo->id_grupo);
+                    })
+                    ->columnSpan(1),
+
+                Select::make('id_subgrupo')
+                    ->label('Subgrupo')
+                    ->options(function (Get $get) {
+                        $grupoId = $get('id_grupo');
+
+                        if (! $grupoId) {
+                            return [];
+                        }
+
+                        return MaterialSubgrupo::query()
+                            ->where('id_grupo', $grupoId)
+                            ->orderBy('nombre')
+                            ->pluck('nombre', 'id_subgrupo')
+                            ->toArray();
+                    })
+                    ->searchable()
+                    ->preload()
+                    ->required()
+                    ->disabled(fn (Get $get) => ! $get('id_grupo'))
+                    ->createOptionForm([
+                        TextInput::make('nombre')
+                            ->label('Nombre')
+                            ->required(),
+                    ])
+                    ->createOptionUsing(function (Select $component, array $data): int {
+                        $parentState = $component->getContainer()->getRawState();
+                        $grupoId = $parentState['id_grupo'] ?? null;
+
+                        if (! $grupoId) {
+                            throw new \Exception('Debe seleccionar un grupo antes de crear un subgrupo.');
+                        }
+
+                        $lastCode = MaterialSubgrupo::query()
+                            ->orderByDesc('id_subgrupo')
+                            ->value('codigo_subgrupo');
+
+                        $nextNumber = 1;
+                        if ($lastCode && preg_match('/SUB-(\d+)/', $lastCode, $matches)) {
+                            $nextNumber = ((int) $matches[1]) + 1;
+                        }
+
+                        $codigo = 'SUB-'.str_pad((string) $nextNumber, 3, '0', STR_PAD_LEFT);
+
+                        $subgrupo = MaterialSubgrupo::create([
+                            'id_grupo' => $grupoId,
+                            'codigo_subgrupo' => $codigo,
+                            'nombre' => $data['nombre'],
+                        ]);
+
+                        return $subgrupo->getKey();
+                    })
                     ->columnSpan(1),
 
                 TextInput::make('unidad_medida')
@@ -115,4 +200,3 @@ class MaterialForm
             ]);
     }
 }
-
