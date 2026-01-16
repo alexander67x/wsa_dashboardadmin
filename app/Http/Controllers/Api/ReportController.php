@@ -389,6 +389,57 @@ class ReportController extends Controller
         ]);
     }
 
+    public function reject(Request $request, string $id): JsonResponse
+    {
+        $data = $request->validate([
+            'observations' => ['required', 'string', 'max:500'],
+        ]);
+
+        $user = $request->user();
+
+        if (! $user) {
+            abort(401);
+        }
+
+        $empleado = Empleado::where('email', $user->email)->first();
+
+        if (! $empleado) {
+            throw ValidationException::withMessages([
+                'user' => ['No se encontró un empleado asociado al usuario autenticado.'],
+            ]);
+        }
+
+        $report = DB::transaction(function () use ($id, $data, $empleado) {
+            $report = ReporteAvanceTarea::whereKey($id)
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            if (! in_array($report->estado, ['enviado', 'borrador'])) {
+                throw ValidationException::withMessages([
+                    'status' => ['El reporte no está pendiente y no puede rechazarse.'],
+                ]);
+            }
+
+            $report->update([
+                'estado' => 'rechazado',
+                'observaciones_supervisor' => $data['observations'],
+                'fecha_aprobacion' => now(),
+                'aprobado_por' => $empleado->cod_empleado,
+            ]);
+
+            return $report;
+        });
+
+        $report->load(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor', 'archivos', 'historiales.creadoPor']);
+
+        $this->notifyReportStatusChange($report, 'rechazado', $data['observations']);
+
+        return response()->json([
+            'message' => 'Reporte rechazado correctamente.',
+            'report' => $this->transformReportDetail($report),
+        ]);
+    }
+
     protected function transformReport(ReporteAvanceTarea $report): array
     {
         return [
@@ -418,27 +469,68 @@ class ReportController extends Controller
                 $report->proyecto->direccion,
                 $report->proyecto->ciudad,
                 $report->proyecto->pais,
-            ]))
-            : null;
+              ]))
+              : null;
 
-        return [
-            'id' => (string) $report->getKey(),
-            'projectId' => $report->cod_proy,
-            'taskId' => $report->id_tarea ? (string) $report->id_tarea : null,
+        $projectName = $report->proyecto?->nombre_ubicacion;
+        $projectCode = $report->cod_proy;
+        $authorName = $report->registradoPor?->nombre_completo;
+        $date = optional($report->fecha_reporte)->toDateString();
+        $statusEn = $this->mapEstadoToStatus($report->estado);
+        $statusEs = match ($report->estado) {
+            'aprobado' => 'aprobado',
+            'rechazado' => 'rechazado',
+            'borrador', 'enviado' => 'pendiente',
+            default => $report->estado ?? 'pendiente',
+        };
+        $description = $report->descripcion;
+        $observaciones = $report->observaciones_supervisor;
+  
+          return [
+              'id' => (string) $report->getKey(),
+              'projectId' => $report->cod_proy,
+              'taskId' => $report->id_tarea ? (string) $report->id_tarea : null,
             'taskTitle' => $report->tarea?->titulo,
             'taskDescription' => $report->tarea?->descripcion,
             'taskStatus' => $report->tarea?->estado,
-            'title' => $report->titulo,
-            'project' => $report->proyecto?->nombre_ubicacion,
-            'type' => 'progress',
-            'status' => $this->mapEstadoToStatus($report->estado),
-            'authorId' => optional($report->registradoPor)?->cod_empleado ? (string) $report->registradoPor->cod_empleado : null,
-            'author' => $report->registradoPor?->nombre_completo,
-            'date' => optional($report->fecha_reporte)->toDateString(),
-            'location' => $projectLocation,
-            'description' => $report->descripcion,
-            'observations' => $report->observaciones_supervisor,
-            'images' => $images,
+              'title' => $report->titulo,
+
+              // Proyecto: código e identificadores alternativos
+              'project' => $projectName,
+              'projectCode' => $projectCode,
+              'projectName' => $projectName,
+              'project_name' => $projectName,
+              'proyecto' => $projectName,
+              'obra' => $projectName,
+
+              'type' => 'progress',
+
+              // Estado en inglés y español
+              'status' => $statusEn,
+              'status_es' => $statusEs,
+
+              'authorId' => optional($report->registradoPor)?->cod_empleado ? (string) $report->registradoPor->cod_empleado : null,
+              'author' => $authorName,
+              'authorName' => $authorName,
+              'author_name' => $authorName,
+              'autor' => $authorName,
+              'autorNombre' => $authorName,
+
+              // Fecha del reporte con alias
+              'date' => $date,
+              'fecha' => $date,
+              'fecha_reporte' => $date,
+              'reportDate' => $date,
+
+              'location' => $projectLocation,
+              // Descripción y observaciones con varias claves soportadas
+              'description' => $description,
+              'descripcion' => $description,
+              'detalle' => $description,
+              'detalles' => $description,
+              'observaciones' => $observaciones,
+
+              'images' => $images,
             'approvedBy' => $report->aprobadoPor?->nombre_completo,
             'approvedDate' => optional($report->fecha_aprobacion)->toDateTimeString(),
             'feedback' => $report->observaciones_supervisor,

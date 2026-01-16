@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Materiales\Tables;
 
+use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -10,13 +11,39 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class MaterialsTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['subgrupo', 'almacenes']))
+            ->modifyQueryUsing(function ($query) {
+                $query->with(['subgrupo', 'almacenes']);
+
+                $user = Auth::user();
+                if (! $user) {
+                    return $query->whereRaw('1 = 0');
+                }
+
+                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                    $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                    if ($allowed === null) {
+                        return $query;
+                    }
+
+                    if (empty($allowed)) {
+                        return $query->whereRaw('1 = 0');
+                    }
+
+                    return $query->whereHas('almacenes', function ($almacenQuery) use ($allowed) {
+                        $almacenQuery->whereIn('cod_proy', $allowed);
+                    });
+                }
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('codigo_producto')
                     ->label('Código')
@@ -126,7 +153,32 @@ class MaterialsTable
 
                 SelectFilter::make('almacenes')
                     ->label('Almacén')
-                    ->relationship('almacenes', 'nombre')
+                    ->relationship('almacenes', 'nombre', function ($almacenQuery) {
+                        if (! $almacenQuery) {
+                            return $almacenQuery;
+                        }
+
+                        $user = Auth::user();
+                        if (! $user) {
+                            return $almacenQuery->whereRaw('1 = 0');
+                        }
+
+                        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                            if ($allowed === null) {
+                                return $almacenQuery;
+                            }
+
+                            if (empty($allowed)) {
+                                return $almacenQuery->whereRaw('1 = 0');
+                            }
+
+                            return $almacenQuery->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $almacenQuery;
+                    })
                     ->searchable()
                     ->preload(),
             ])
@@ -144,4 +196,3 @@ class MaterialsTable
             ->paginated([10, 25, 50, 100]);
     }
 }
-

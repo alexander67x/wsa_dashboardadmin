@@ -2,17 +2,43 @@
 
 namespace App\Filament\Resources\Reportes\Tables;
 
+use App\Services\ProjectAccessService;
+use App\Models\Proyecto;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class ReportesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor']))
+            ->modifyQueryUsing(function ($query) {
+                $query->with(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor']);
+
+                $user = Auth::user();
+                if (! $user) {
+                    return $query->whereRaw('1 = 0');
+                }
+
+                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                    $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                    if ($allowed === null) {
+                        return $query;
+                    }
+
+                    if (empty($allowed)) {
+                        return $query->whereRaw('1 = 0');
+                    }
+
+                    return $query->whereIn('cod_proy', $allowed);
+                }
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('titulo')
                     ->label('Título')
@@ -92,6 +118,14 @@ class ReportesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('cod_proy')
+                    ->label('Proyecto')
+                    ->options(fn () => Proyecto::orderBy('nombre_ubicacion')
+                        ->pluck('nombre_ubicacion', 'cod_proy')
+                        ->toArray()
+                    )
+                    ->searchable()
+                    ->preload(),
                 SelectFilter::make('estado')
                     ->label('Estado')
                     ->options([

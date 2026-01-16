@@ -58,6 +58,15 @@ class ProyectosTable
                         'cancelado' => 'danger',
                         'completado' => 'primary',
                     }),
+
+                TextColumn::make('caracter_empresa')
+                    ->label('Carácter Empresa')
+                    ->badge()
+                    ->color(fn (string $state): string => match ($state) {
+                        'publico' => 'success',
+                        'privado' => 'gray',
+                        default => 'gray',
+                    }),
                 
                 // Presupuesto eliminado de la tabla
                 
@@ -85,6 +94,11 @@ class ProyectosTable
                         'completado' => 'Completado',
                         'cancelado' => 'Cancelado',
                         'pausado' => 'Pausado',
+                    ]),
+                SelectFilter::make('caracter_empresa')
+                    ->options([
+                        'publico' => 'Empresa del Estado (Pública)',
+                        'privado' => 'Empresa Privada',
                     ]),
                 TrashedFilter::make(),
             ])

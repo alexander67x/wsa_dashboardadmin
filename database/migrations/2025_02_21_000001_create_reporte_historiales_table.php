@@ -17,15 +17,6 @@ return new class extends Migration
             $table->integer('creado_por')->nullable()->index();
             $table->timestamps();
 
-            $table->foreign('id_reporte')
-                ->references('id_reporte')
-                ->on('reportes_avance_tarea')
-                ->cascadeOnDelete();
-
-            $table->foreign('creado_por')
-                ->references('cod_empleado')
-                ->on('empleados')
-                ->nullOnDelete();
         });
     }
 

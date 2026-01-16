@@ -5,7 +5,8 @@
             latitude: {{ $latitude }},
             longitude: {{ $longitude }},
             zoom: {{ $zoom }},
-            center: {{ json_encode($center) }}
+            center: {{ json_encode($center) }},
+            isEditable: {{ $isEditable ? 'true' : 'false' }}
         })"
         x-init="initMap()"
         class="w-full map-picker-container"
@@ -80,6 +81,7 @@ function mapPicker(config) {
         longitude: config.longitude,
         zoom: config.zoom,
         center: config.center,
+        isEditable: config.isEditable ?? true,
         
         initMap() {
             console.log('initMap llamado', { isInitialized, map: !!map, marker: !!marker });
@@ -111,13 +113,16 @@ function mapPicker(config) {
                     
                     // Agregar marcador
                     marker = L.marker([config.latitude, config.longitude], {
-                        draggable: true
+                        draggable: this.isEditable
                     }).addTo(map);
                     
                     console.log('Mapa y marcador creados correctamente');
                     
                     // Evento de clic en el mapa
                     map.on('click', (e) => {
+                        if (!this.isEditable) {
+                            return;
+                        }
                         console.log('Clic en el mapa:', e.latlng);
                         const lat = e.latlng.lat.toFixed(7);
                         const lng = e.latlng.lng.toFixed(7);
@@ -134,6 +139,11 @@ function mapPicker(config) {
                     
                     // Evento de arrastre del marcador
                     marker.on('dragend', (e) => {
+                        if (!this.isEditable) {
+                            // Revertir a la posición actual si no es editable
+                            marker.setLatLng([this.latitude, this.longitude]);
+                            return;
+                        }
                         console.log('Marcador arrastrado:', e.target.getLatLng());
                         const latlng = e.target.getLatLng();
                         this.latitude = latlng.lat.toFixed(7);

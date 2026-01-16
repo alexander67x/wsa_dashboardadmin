@@ -32,6 +32,32 @@
         }
 
         .seguimiento-layout {
+            --seguimiento-text: #0f172a;
+            --seguimiento-muted: #475569;
+            --seguimiento-card-bg: #ffffff;
+            --seguimiento-shadow: 0 20px 80px rgba(15, 23, 42, 0.1);
+            --seguimiento-header-tag-bg: rgba(16, 185, 129, 0.15);
+            --seguimiento-header-tag-text: #047857;
+            --seguimiento-filter-bg: #ffffff;
+            --seguimiento-filter-border: #cbd5f5;
+            --seguimiento-filter-focus: #2563eb;
+            --seguimiento-table-border: #e2e8f0;
+            --seguimiento-table-head: #94a3b8;
+            --seguimiento-empty: #94a3b8;
+            --seguimiento-tag-success-bg: rgba(16, 185, 129, 0.15);
+            --seguimiento-tag-success-text: #047857;
+            --seguimiento-tag-warn-bg: rgba(249, 115, 22, 0.15);
+            --seguimiento-tag-warn-text: #c2410c;
+            --seguimiento-chart-bar: rgba(37, 99, 235, 0.65);
+            --seguimiento-chart-bar-alt: rgba(14, 165, 233, 0.35);
+            --seguimiento-chart-bar-alt-border: #0ea5e9;
+            --seguimiento-chart-line: #f97316;
+            --seguimiento-chart-line-planned: #6366f1;
+            --seguimiento-chart-grid: rgba(148, 163, 184, 0.2);
+            --seguimiento-chart-grid-soft: rgba(148, 163, 184, 0.1);
+            --seguimiento-chart-tick: #475569;
+            --seguimiento-chart-legend: #334155;
+            color: var(--seguimiento-text);
             max-width: 1200px;
             margin: 0 auto;
             display: flex;
@@ -40,10 +66,10 @@
         }
 
         .seguimiento-card {
-            background: #fff;
+            background: var(--seguimiento-card-bg);
             border-radius: 1.25rem;
             padding: 1.75rem;
-            box-shadow: 0 20px 80px rgba(15, 23, 42, 0.1);
+            box-shadow: var(--seguimiento-shadow);
         }
 
         .seguimiento-header-tag {
@@ -54,8 +80,8 @@
             border-radius: 999px;
             font-size: 0.8rem;
             font-weight: 600;
-            background: rgba(16, 185, 129, 0.15);
-            color: #047857;
+            background: var(--seguimiento-header-tag-bg);
+            color: var(--seguimiento-header-tag-text);
         }
 
         .seguimiento-title {
@@ -65,7 +91,7 @@
 
         .seguimiento-lead {
             margin: 0;
-            color: #475569;
+            color: var(--seguimiento-muted);
             font-size: 1rem;
         }
 
@@ -79,7 +105,7 @@
 
         .seguimiento-filter label {
             font-size: 0.85rem;
-            color: #64748b;
+            color: var(--seguimiento-muted);
             margin-bottom: 0.25rem;
             display: block;
         }
@@ -87,17 +113,17 @@
         .seguimiento-filter select {
             min-width: 260px;
             border-radius: 0.65rem;
-            border: 1px solid #cbd5f5;
+            border: 1px solid var(--seguimiento-filter-border);
             padding: 0.65rem 0.75rem;
-            background: #fff;
+            background: var(--seguimiento-filter-bg);
             font-size: 0.95rem;
-            color: #0f172a;
+            color: var(--seguimiento-text);
             box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
         }
 
         .seguimiento-filter select:focus {
             outline: none;
-            border-color: #2563eb;
+            border-color: var(--seguimiento-filter-focus);
             box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
         }
 
@@ -115,7 +141,7 @@
         .seguimiento-table td {
             padding: 0.75rem 0.5rem;
             text-align: left;
-            border-bottom: 1px solid #e2e8f0;
+            border-bottom: 1px solid var(--seguimiento-table-border);
             white-space: nowrap;
         }
 
@@ -123,7 +149,7 @@
             font-size: 0.8rem;
             text-transform: uppercase;
             letter-spacing: 0.08em;
-            color: #94a3b8;
+            color: var(--seguimiento-table-head);
         }
 
         .seguimiento-tag {
@@ -137,24 +163,92 @@
         }
 
         .seguimiento-tag.success {
-            background: rgba(16, 185, 129, 0.15);
-            color: #047857;
+            background: var(--seguimiento-tag-success-bg);
+            color: var(--seguimiento-tag-success-text);
         }
 
         .seguimiento-tag.warn {
-            background: rgba(249, 115, 22, 0.15);
-            color: #c2410c;
+            background: var(--seguimiento-tag-warn-bg);
+            color: var(--seguimiento-tag-warn-text);
         }
 
         .seguimiento-empty {
             text-align: center;
             padding: 2rem;
-            color: #94a3b8;
+            color: var(--seguimiento-empty);
         }
 
         .seguimiento-card canvas {
             width: 100% !important;
             min-height: 320px;
+        }
+
+        .dark .seguimiento-body {
+            background: radial-gradient(circle at top, #0b1220, #020617 45%);
+            color: #e2e8f0;
+        }
+
+        .dark .seguimiento-layout {
+            --seguimiento-text: #e2e8f0;
+            --seguimiento-muted: #94a3b8;
+            --seguimiento-card-bg: #0f172a;
+            --seguimiento-shadow: 0 20px 60px rgba(2, 6, 23, 0.6);
+            --seguimiento-header-tag-bg: rgba(16, 185, 129, 0.2);
+            --seguimiento-header-tag-text: #6ee7b7;
+            --seguimiento-filter-bg: #0b1220;
+            --seguimiento-filter-border: #1e293b;
+            --seguimiento-filter-focus: #38bdf8;
+            --seguimiento-table-border: #1e293b;
+            --seguimiento-table-head: #94a3b8;
+            --seguimiento-empty: #94a3b8;
+            --seguimiento-tag-success-bg: rgba(16, 185, 129, 0.2);
+            --seguimiento-tag-success-text: #6ee7b7;
+            --seguimiento-tag-warn-bg: rgba(251, 146, 60, 0.2);
+            --seguimiento-tag-warn-text: #fdba74;
+            --seguimiento-chart-bar: rgba(56, 189, 248, 0.65);
+            --seguimiento-chart-bar-alt: rgba(14, 165, 233, 0.4);
+            --seguimiento-chart-bar-alt-border: #38bdf8;
+            --seguimiento-chart-line: #fb923c;
+            --seguimiento-chart-line-planned: #a5b4fc;
+            --seguimiento-chart-grid: rgba(148, 163, 184, 0.3);
+            --seguimiento-chart-grid-soft: rgba(148, 163, 184, 0.15);
+            --seguimiento-chart-tick: #cbd5f5;
+            --seguimiento-chart-legend: #e2e8f0;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            .seguimiento-body {
+                background: radial-gradient(circle at top, #0b1220, #020617 45%);
+                color: #e2e8f0;
+            }
+
+            .seguimiento-body .seguimiento-layout {
+                --seguimiento-text: #e2e8f0;
+                --seguimiento-muted: #94a3b8;
+                --seguimiento-card-bg: #0f172a;
+                --seguimiento-shadow: 0 20px 60px rgba(2, 6, 23, 0.6);
+                --seguimiento-header-tag-bg: rgba(16, 185, 129, 0.2);
+                --seguimiento-header-tag-text: #6ee7b7;
+                --seguimiento-filter-bg: #0b1220;
+                --seguimiento-filter-border: #1e293b;
+                --seguimiento-filter-focus: #38bdf8;
+                --seguimiento-table-border: #1e293b;
+                --seguimiento-table-head: #94a3b8;
+                --seguimiento-empty: #94a3b8;
+                --seguimiento-tag-success-bg: rgba(16, 185, 129, 0.2);
+                --seguimiento-tag-success-text: #6ee7b7;
+                --seguimiento-tag-warn-bg: rgba(251, 146, 60, 0.2);
+                --seguimiento-tag-warn-text: #fdba74;
+                --seguimiento-chart-bar: rgba(56, 189, 248, 0.65);
+                --seguimiento-chart-bar-alt: rgba(14, 165, 233, 0.4);
+                --seguimiento-chart-bar-alt-border: #38bdf8;
+                --seguimiento-chart-line: #fb923c;
+                --seguimiento-chart-line-planned: #a5b4fc;
+                --seguimiento-chart-grid: rgba(148, 163, 184, 0.3);
+                --seguimiento-chart-grid-soft: rgba(148, 163, 184, 0.15);
+                --seguimiento-chart-tick: #cbd5f5;
+                --seguimiento-chart-legend: #e2e8f0;
+            }
         }
 
         @media (max-width: 720px) {
@@ -272,6 +366,7 @@
             const projectFilter = document.querySelector('[data-project-filter]');
             const tableBody = document.querySelector('[data-tracking-table]');
             const emptyState = document.querySelector('[data-chart-empty]');
+            const layout = document.querySelector('.seguimiento-layout');
             let currentProject = @json($selectedProject);
             let chartInstance = ctx._seguimientoChartInstance ?? null;
 
@@ -280,6 +375,40 @@
                 chartInstance = null;
                 ctx._seguimientoChartInstance = null;
             }
+
+            const getThemeTokens = () => {
+                const fallback = {
+                    bar: 'rgba(37, 99, 235, 0.65)',
+                    barAlt: 'rgba(14, 165, 233, 0.35)',
+                    barAltBorder: '#0ea5e9',
+                    line: '#f97316',
+                    linePlanned: '#6366f1',
+                    grid: 'rgba(148, 163, 184, 0.2)',
+                    gridSoft: 'rgba(148, 163, 184, 0.1)',
+                    tick: '#475569',
+                    legend: '#334155',
+                };
+
+                if (!layout) {
+                    return fallback;
+                }
+
+                const styles = getComputedStyle(layout);
+                const value = (name, fallbackValue) =>
+                    (styles.getPropertyValue(name) || fallbackValue).trim();
+
+                return {
+                    bar: value('--seguimiento-chart-bar', fallback.bar),
+                    barAlt: value('--seguimiento-chart-bar-alt', fallback.barAlt),
+                    barAltBorder: value('--seguimiento-chart-bar-alt-border', fallback.barAltBorder),
+                    line: value('--seguimiento-chart-line', fallback.line),
+                    linePlanned: value('--seguimiento-chart-line-planned', fallback.linePlanned),
+                    grid: value('--seguimiento-chart-grid', fallback.grid),
+                    gridSoft: value('--seguimiento-chart-grid-soft', fallback.gridSoft),
+                    tick: value('--seguimiento-chart-tick', fallback.tick),
+                    legend: value('--seguimiento-chart-legend', fallback.legend),
+                };
+            };
 
             const findInitialProject = () => {
                 if (currentProject && projectSeries[currentProject]) {
@@ -333,12 +462,12 @@
                 emptyState.style.display = show ? 'block' : 'none';
             };
 
-            const buildDatasets = (serie) => ([
+            const buildDatasets = (serie, theme) => ([
                 {
                     type: 'bar',
                     label: 'Cumplimiento semanal (tareas)',
                     data: serie?.weekly ?? [],
-                    backgroundColor: 'rgba(37, 99, 235, 0.65)',
+                    backgroundColor: theme.bar,
                     borderRadius: 8,
                     maxBarThickness: 28,
                     order: 2,
@@ -347,8 +476,8 @@
                     type: 'bar',
                     label: 'Avance total del proyecto',
                     data: serie?.total ?? [],
-                    backgroundColor: 'rgba(14, 165, 233, 0.35)',
-                    borderColor: '#0ea5e9',
+                    backgroundColor: theme.barAlt,
+                    borderColor: theme.barAltBorder,
                     borderWidth: 1,
                     borderRadius: 8,
                     maxBarThickness: 28,
@@ -358,7 +487,7 @@
                     type: 'line',
                     label: 'Curva de avance real',
                     data: serie?.curve ?? [],
-                    borderColor: '#f97316',
+                    borderColor: theme.line,
                     backgroundColor: 'transparent',
                     borderWidth: 3,
                     pointRadius: 4,
@@ -371,7 +500,7 @@
                     type: 'line',
                     label: 'Curva de avance planificado',
                     data: serie?.planned ?? [],
-                    borderColor: '#6366f1',
+                    borderColor: theme.linePlanned,
                     backgroundColor: 'transparent',
                     borderWidth: 3,
                     borderDash: [6, 6],
@@ -383,9 +512,58 @@
                 },
             ]);
 
+            const buildOptions = (theme) => ({
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        ticks: {
+                            callback: (value) => `${value}%`,
+                            color: theme.tick,
+                        },
+                        grid: {
+                            color: theme.grid,
+                        },
+                    },
+                    x: {
+                        ticks: {
+                            color: theme.tick,
+                        },
+                        grid: {
+                            color: theme.gridSoft,
+                        },
+                    },
+                },
+                interaction: {
+                    intersect: false,
+                    mode: 'index',
+                },
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            usePointStyle: true,
+                            boxWidth: 8,
+                            color: theme.legend,
+                        },
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: (context) => {
+                                const value = context.parsed?.y ?? context.parsed ?? 0;
+                                return `${context.dataset.label}: ${Number(value).toFixed(1)}%`;
+                            },
+                        },
+                    },
+                },
+            });
+
             const renderChart = (projectCode) => {
                 const serie = projectSeries[projectCode];
                 hydrateTable(serie);
+                const theme = getThemeTokens();
 
                 if (!serie || !serie.labels?.length) {
                     if (chartInstance) {
@@ -404,58 +582,29 @@
                         type: 'bar',
                         data: {
                             labels: serie.labels,
-                            datasets: buildDatasets(serie),
+                            datasets: buildDatasets(serie, theme),
                         },
-                        options: {
-                            responsive: true,
-                            maintainAspectRatio: false,
-                            scales: {
-                                y: {
-                                    beginAtZero: true,
-                                    max: 100,
-                                    ticks: {
-                                        callback: (value) => `${value}%`,
-                                    },
-                                    grid: {
-                                        color: 'rgba(148, 163, 184, 0.2)',
-                                    },
-                                },
-                                x: {
-                                    grid: {
-                                        color: 'rgba(148, 163, 184, 0.1)',
-                                    },
-                                },
-                            },
-                            interaction: {
-                                intersect: false,
-                                mode: 'index',
-                            },
-                            plugins: {
-                                legend: {
-                                    position: 'bottom',
-                                    labels: {
-                                        usePointStyle: true,
-                                        boxWidth: 8,
-                                    },
-                                },
-                                tooltip: {
-                                    callbacks: {
-                                        label: (context) => {
-                                            const value = context.parsed?.y ?? context.parsed ?? 0;
-                                            return `${context.dataset.label}: ${Number(value).toFixed(1)}%`;
-                                        },
-                                    },
-                                },
-                            },
-                        },
+                        options: buildOptions(theme),
                     });
                 } else {
                     chartInstance.data.labels = serie.labels ?? [];
-                    chartInstance.data.datasets = buildDatasets(serie);
+                    chartInstance.data.datasets = buildDatasets(serie, theme);
+                    chartInstance.options = buildOptions(theme);
                     chartInstance.update();
                 }
 
                 ctx._seguimientoChartInstance = chartInstance;
+            };
+
+            const handleThemeChange = () => {
+                if (!chartInstance) {
+                    return;
+                }
+
+                const theme = getThemeTokens();
+                chartInstance.data.datasets = buildDatasets(projectSeries[currentProject], theme);
+                chartInstance.options = buildOptions(theme);
+                chartInstance.update('none');
             };
 
             const initialProject = findInitialProject();
@@ -484,6 +633,14 @@
 
                 projectFilter.addEventListener('change', projectFilter._seguimientoChangeHandler);
             }
+
+            if (window.matchMedia) {
+                const media = window.matchMedia('(prefers-color-scheme: dark)');
+                media.addEventListener('change', handleThemeChange);
+            }
+
+            const themeObserver = new MutationObserver(handleThemeChange);
+            themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
         };
 
         const initSeguimientoCurve = () => {

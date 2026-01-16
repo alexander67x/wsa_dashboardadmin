@@ -30,18 +30,6 @@ class SolicitudForm
                         return $record->proyecto?->nombre_ubicacion ?? '—';
                     }),
                 
-                TextInput::make('tarea_titulo')
-                    ->label('Tarea')
-                    ->disabled()
-                    ->dehydrated(false)
-                    ->formatStateUsing(function ($state, $record) {
-                        if (!$record) {
-                            return '—';
-                        }
-                        $record->loadMissing('tarea');
-                        return $record->tarea?->titulo ?? '—';
-                    }),
-                
                 TextInput::make('solicitado_por_nombre')
                     ->label('Solicitado por')
                     ->disabled()

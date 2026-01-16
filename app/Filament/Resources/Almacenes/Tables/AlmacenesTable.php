@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Almacenes\Tables;
 
+use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -10,13 +11,37 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class AlmacenesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['responsableEmpleado', 'almacenPadre', 'proyecto']))
+            ->modifyQueryUsing(function ($query) {
+                $query->with(['responsableEmpleado', 'almacenPadre', 'proyecto']);
+
+                $user = Auth::user();
+                if (! $user) {
+                    return $query->whereRaw('1 = 0');
+                }
+
+                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                    $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                    if ($allowed === null) {
+                        return $query;
+                    }
+
+                    if (empty($allowed)) {
+                        return $query->whereRaw('1 = 0');
+                    }
+
+                    return $query->whereIn('cod_proy', $allowed);
+                }
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('codigo_almacen')
                     ->label('Código')
@@ -112,7 +137,32 @@ class AlmacenesTable
 
                 SelectFilter::make('almacenPadre')
                     ->label('Almacén Padre')
-                    ->relationship('almacenPadre', 'nombre')
+                    ->relationship('almacenPadre', 'nombre', function ($almacenQuery) {
+                        if (! $almacenQuery) {
+                            return $almacenQuery;
+                        }
+
+                        $user = Auth::user();
+                        if (! $user) {
+                            return $almacenQuery->whereRaw('1 = 0');
+                        }
+
+                        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                            if ($allowed === null) {
+                                return $almacenQuery;
+                            }
+
+                            if (empty($allowed)) {
+                                return $almacenQuery->whereRaw('1 = 0');
+                            }
+
+                            return $almacenQuery->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $almacenQuery;
+                    })
                     ->searchable()
                     ->preload(),
             ])
@@ -130,4 +180,3 @@ class AlmacenesTable
             ->paginated([10, 25, 50, 100]);
     }
 }
-

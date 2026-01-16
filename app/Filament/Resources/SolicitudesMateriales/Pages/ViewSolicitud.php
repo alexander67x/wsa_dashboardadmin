@@ -35,9 +35,10 @@ class ViewSolicitud extends ViewRecord
     {
         $actions = [];
         $userRole = Auth::user()?->empleado?->role?->slug;
+        $canApprove = Auth::user()?->hasPermission('materials.requests.approve') ?? false;
 
         // Solo mostrar acciones de aprobar/rechazar si la solicitud está pendiente o en borrador
-        if (in_array($this->record->estado, ['borrador', 'pendiente'])) {
+        if ($canApprove && in_array($this->record->estado, ['borrador', 'pendiente'])) {
             // Cargar items para verificar si requiere compra
             $this->record->loadMissing('items');
             $requiereCompra = $this->record->requiere_compra;
@@ -145,6 +146,14 @@ class ViewSolicitud extends ViewRecord
 
     protected function aprobarSolicitud(?string $observaciones): void
     {
+        if (! Auth::user()?->hasPermission('materials.requests.approve')) {
+            Notification::make()
+                ->title('No tienes permisos para aprobar solicitudes.')
+                ->danger()
+                ->send();
+            return;
+        }
+
         try {
             DB::beginTransaction();
             
@@ -215,6 +224,14 @@ class ViewSolicitud extends ViewRecord
 
     protected function aprobarSolicitudConCompra(?string $observaciones): void
     {
+        if (! Auth::user()?->hasPermission('materials.requests.approve')) {
+            Notification::make()
+                ->title('No tienes permisos para aprobar solicitudes.')
+                ->danger()
+                ->send();
+            return;
+        }
+
         try {
             DB::beginTransaction();
             
@@ -288,6 +305,14 @@ class ViewSolicitud extends ViewRecord
 
     protected function aprobarSolicitudSoloStock(?string $observaciones): void
     {
+        if (! Auth::user()?->hasPermission('materials.requests.approve')) {
+            Notification::make()
+                ->title('No tienes permisos para aprobar solicitudes.')
+                ->danger()
+                ->send();
+            return;
+        }
+
         try {
             DB::beginTransaction();
             
@@ -362,6 +387,14 @@ class ViewSolicitud extends ViewRecord
 
     protected function rechazarSolicitud(string $observaciones): void
     {
+        if (! Auth::user()?->hasPermission('materials.requests.approve')) {
+            Notification::make()
+                ->title('No tienes permisos para rechazar solicitudes.')
+                ->danger()
+                ->send();
+            return;
+        }
+
         try {
             DB::beginTransaction();
             

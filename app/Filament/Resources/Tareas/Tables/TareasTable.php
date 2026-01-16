@@ -3,6 +3,7 @@
 namespace App\Filament\Resources\Tareas\Tables;
 
 use App\Models\Proyecto;
+use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -13,6 +14,7 @@ use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Filters\TrashedFilter;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Auth;
 
 class TareasTable
 {
@@ -24,7 +26,30 @@ class TareasTable
         // Mostrar todas las tareas por defecto
 
         return $table
-            ->modifyQueryUsing(fn (Builder $query) => $query->with('responsables'))
+            ->modifyQueryUsing(function (Builder $query) {
+                $query->with('responsables');
+
+                $user = Auth::user();
+                if (! $user) {
+                    return $query->whereRaw('1 = 0');
+                }
+
+                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                    $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                    if ($allowed === null) {
+                        return $query;
+                    }
+
+                    if (empty($allowed)) {
+                        return $query->whereRaw('1 = 0');
+                    }
+
+                    return $query->whereIn('cod_proy', $allowed);
+                }
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('titulo')
                     ->label('Título')
@@ -126,12 +151,36 @@ class TareasTable
             ->filters(array_filter([
                 SelectFilter::make('cod_proy')
                     ->label('Proyecto')
-                    ->options(fn () => Proyecto::orderBy('cod_proy')
-                        ->get()
-                        ->mapWithKeys(fn ($proyecto) => [
-                            $proyecto->cod_proy => "{$proyecto->cod_proy} — {$proyecto->nombre_ubicacion}"
-                        ])
-                        ->toArray())
+                    ->options(function () {
+                        $query = Proyecto::orderBy('cod_proy');
+
+                        $user = Auth::user();
+                        if ($user?->empleado?->role?->slug === 'responsable_proyecto') {
+                            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                            if ($allowed === null) {
+                                return $query
+                                    ->get()
+                                    ->mapWithKeys(fn ($proyecto) => [
+                                        $proyecto->cod_proy => "{$proyecto->cod_proy} — {$proyecto->nombre_ubicacion}"
+                                    ])
+                                    ->toArray();
+                            }
+
+                            if (empty($allowed)) {
+                                return [];
+                            }
+
+                            $query->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $query
+                            ->get()
+                            ->mapWithKeys(fn ($proyecto) => [
+                                $proyecto->cod_proy => "{$proyecto->cod_proy} — {$proyecto->nombre_ubicacion}"
+                            ])
+                            ->toArray();
+                    })
                     ->searchable()
                     ->preload()
                     ->default($selectedProyecto)

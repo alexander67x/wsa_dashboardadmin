@@ -43,6 +43,8 @@ Route::middleware('auth:sanctum')->group(function () {
 		->middleware('permission:reports.create,mobile.tasks.execute');
 	Route::post('/reports/{id}/approve', [ReportController::class, 'approve'])
 		->middleware('permission:reports.approve');
+	Route::post('/reports/{id}/reject', [ReportController::class, 'reject'])
+		->middleware('permission:reports.approve');
 
 	// Incidencias
 	Route::get('/incidencias', [IncidenciaController::class, 'index'])

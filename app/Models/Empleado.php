@@ -98,6 +98,42 @@ class Empleado extends Model
 
     public function hasPermission(string $permission): bool
     {
+        if (
+            $this->role?->slug === 'supervisor'
+            && in_array($permission, ['inventory.view.central', 'inventory.view.project', 'inventory.view.subwarehouses'], true)
+        ) {
+            return false;
+        }
+
+        if ($permission === 'materials.requests.approve' && $this->role?->slug === 'responsable_proyecto') {
+            return false;
+        }
+
+        // Gerente General (rol 'gerencia') no debe poder registrar/crear movimientos de stock,
+        // solo consultar inventario existente.
+        if ($this->role?->slug === 'gerencia' && in_array($permission, [
+            'inventory.movements.entries',
+            'inventory.movements.exits',
+            'inventory.movements.transfers',
+        ], true)) {
+            return false;
+        }
+
+        // Responsables de proyecto y supervisores deben poder:
+        // - Registrar avances desde la app (reportes)
+        // - Registrar incidencias desde la app
+        if (
+            in_array($this->role?->slug, ['responsable_proyecto', 'supervisor'], true)
+            && in_array($permission, [
+                'reports.create',
+                'mobile.tasks.execute',
+                'incidents.create',
+                'mobile.incidents.report',
+            ], true)
+        ) {
+            return true;
+        }
+
         return in_array($permission, $this->permissionCodes(), true);
     }
 }

@@ -8,11 +8,13 @@ use App\Filament\Resources\StockAlmacenes\Pages\ListStockAlmacenes;
 use App\Filament\Resources\StockAlmacenes\Schemas\StockAlmacenForm;
 use App\Filament\Resources\StockAlmacenes\Tables\StockAlmacenesTable;
 use App\Models\StockAlmacen;
+use App\Services\ProjectAccessService;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
 use Filament\Support\Icons\Heroicon;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class StockAlmacenResource extends Resource
 {
@@ -58,11 +60,97 @@ class StockAlmacenResource extends Resource
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        $user = Auth::user();
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+            $allowed = ProjectAccessService::allowedProjectIds($user);
+            $query = static::getModel()::query();
+
+            if ($allowed === null) {
+                return (string) $query->count();
+            }
+
+            if (empty($allowed)) {
+                return '0';
+            }
+
+            return (string) $query
+                ->whereHas('almacen', fn ($almacenQuery) => $almacenQuery->whereIn('cod_proy', $allowed))
+                ->count();
+        }
+
+        return (string) static::getModel()::count();
     }
 
     public static function getNavigationBadgeColor(): ?string
     {
         return 'primary';
+    }
+
+    public static function shouldRegisterNavigation(): bool
+    {
+        return static::canViewAny();
+    }
+
+    public static function canViewAny(): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+            return true;
+        }
+
+        return $user->hasPermission('inventory.view.central')
+            || $user->hasPermission('inventory.view.project')
+            || $user->hasPermission('inventory.view.subwarehouses');
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        // Gerente General solo consulta stock, no crea registros
+        if ($user->empleado?->role?->slug === 'gerencia') {
+            return false;
+        }
+
+        return parent::canCreate();
+    }
+
+    public static function canEdit($record): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->empleado?->role?->slug === 'gerencia') {
+            return false;
+        }
+
+        return parent::canEdit($record);
+    }
+
+    public static function canDelete($record): bool
+    {
+        $user = Auth::user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->empleado?->role?->slug === 'gerencia') {
+            return false;
+        }
+
+        return parent::canDelete($record);
     }
 }

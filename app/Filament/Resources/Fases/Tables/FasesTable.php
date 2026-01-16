@@ -3,17 +3,43 @@
 namespace App\Filament\Resources\Fases\Tables;
 
 use App\Models\Proyecto;
+use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class FasesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
+            ->modifyQueryUsing(function ($query) {
+                $query->with('proyecto');
+
+                $user = Auth::user();
+                if (! $user) {
+                    return $query->whereRaw('1 = 0');
+                }
+
+                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                    $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                    if ($allowed === null) {
+                        return $query;
+                    }
+
+                    if (empty($allowed)) {
+                        return $query->whereRaw('1 = 0');
+                    }
+
+                    return $query->whereIn('cod_proy', $allowed);
+                }
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('nombre_fase')
                     ->label('Fase')
@@ -68,10 +94,32 @@ class FasesTable
             ->filters([
                 SelectFilter::make('cod_proy')
                     ->label('Proyecto')
-                    ->options(fn () => Proyecto::orderBy('cod_proy')
-                        ->pluck('nombre_ubicacion', 'cod_proy')
-                        ->map(fn ($nombre, $cod) => "{$cod} — {$nombre}")
-                        ->toArray())
+                    ->options(function () {
+                        $query = Proyecto::orderBy('cod_proy');
+
+                        $user = Auth::user();
+                        if ($user?->empleado?->role?->slug === 'responsable_proyecto') {
+                            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                            if ($allowed === null) {
+                                return $query
+                                    ->pluck('nombre_ubicacion', 'cod_proy')
+                                    ->map(fn ($nombre, $cod) => "{$cod} — {$nombre}")
+                                    ->toArray();
+                            }
+
+                            if (empty($allowed)) {
+                                return [];
+                            }
+
+                            $query->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $query
+                            ->pluck('nombre_ubicacion', 'cod_proy')
+                            ->map(fn ($nombre, $cod) => "{$cod} — {$nombre}")
+                            ->toArray();
+                    })
                     ->searchable()
                     ->preload(),
 

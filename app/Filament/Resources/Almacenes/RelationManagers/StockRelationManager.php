@@ -11,6 +11,7 @@ use Filament\Actions\CreateAction;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\EditAction;
 use Filament\Tables;
+use Illuminate\Support\Facades\Auth;
 
 class StockRelationManager extends RelationManager
 {
@@ -64,12 +65,30 @@ class StockRelationManager extends RelationManager
                     ->numeric(2)
                     ->sortable(),
             ])
-            ->headerActions([
-                CreateAction::make(),
-            ])
-            ->actions([
-                EditAction::make(),
-                DeleteAction::make(),
-            ]);
+            ->headerActions(function () {
+                $user = Auth::user();
+
+                // Gerente General: sin crear stock desde el almacén
+                if ($user && $user->empleado?->role?->slug === 'gerencia') {
+                    return [];
+                }
+
+                return [
+                    CreateAction::make(),
+                ];
+            })
+            ->actions(function () {
+                $user = Auth::user();
+
+                // Gerente General: solo visualiza, no edita ni elimina
+                if ($user && $user->empleado?->role?->slug === 'gerencia') {
+                    return [];
+                }
+
+                return [
+                    EditAction::make(),
+                    DeleteAction::make(),
+                ];
+            });
     }
 }

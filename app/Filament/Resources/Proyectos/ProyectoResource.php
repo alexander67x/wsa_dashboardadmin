@@ -11,6 +11,7 @@ use App\Filament\Resources\Proyectos\RelationManagers\ArchivosRelationManager;
 use App\Filament\Resources\Proyectos\Schemas\ProyectoForm;
 use App\Filament\Resources\Proyectos\Tables\ProyectosTable;
 use App\Models\Proyecto;
+use App\Services\ProjectAccessService;
 use BackedEnum;
 use Filament\Resources\Resource;
 use Filament\Schemas\Schema;
@@ -69,17 +70,100 @@ class ProyectoResource extends Resource
         ];
     }
 
-    public static function getRecordRouteBindingEloquentQuery(): Builder
+    protected static function applyUserProjectScope(Builder $query): Builder
     {
-        return parent::getRecordRouteBindingEloquentQuery()
+        $user = auth()->user();
+
+        if (! $user) {
+            return $query;
+        }
+
+        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+            if ($allowed === null) {
+                return $query;
+            }
+
+            if (empty($allowed)) {
+                return $query->whereRaw('1 = 0');
+            }
+
+            return $query->whereIn('cod_proy', $allowed);
+        }
+
+        $canManageAll = $user->hasPermission('projects.manage.structure')
+            || $user->hasPermission('projects.detail.view');
+
+        if ($canManageAll) {
+            return $query;
+        }
+
+        if (! $user->hasPermission('projects.my.view')) {
+            return $query;
+        }
+
+        $empleado = $user->empleado;
+
+        if (! $empleado) {
+            return $query;
+        }
+
+        $empleadoId = $empleado->cod_empleado;
+
+        return $query->where(function (Builder $subQuery) use ($empleadoId) {
+            $subQuery
+                ->where('responsable_proyecto', $empleadoId)
+                ->orWhere('supervisor_obra', $empleadoId)
+                ->orWhereHas('empleados', function (Builder $empleadosQuery) use ($empleadoId) {
+                    $empleadosQuery->where('empleados.cod_empleado', $empleadoId);
+                });
+        });
+    }
+
+    public static function getEloquentQuery(): Builder
+    {
+        $query = parent::getEloquentQuery()
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
+
+        return static::applyUserProjectScope($query);
+    }
+
+    public static function getRecordRouteBindingEloquentQuery(): Builder
+    {
+        $query = parent::getRecordRouteBindingEloquentQuery()
+            ->withoutGlobalScopes([
+                SoftDeletingScope::class,
+            ]);
+
+        return static::applyUserProjectScope($query);
     }
 
     public static function getNavigationBadge(): ?string
     {
-        return static::getModel()::count();
+        $user = auth()->user();
+        if (! $user) {
+            return null;
+        }
+
+        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+            $allowed = ProjectAccessService::allowedProjectIds($user);
+            $query = static::getModel()::query();
+
+            if ($allowed === null) {
+                return (string) $query->count();
+            }
+
+            if (empty($allowed)) {
+                return '0';
+            }
+
+            return (string) $query->whereIn('cod_proy', $allowed)->count();
+        }
+
+        return (string) static::getModel()::count();
     }
 
     public static function getNavigationBadgeColor(): ?string

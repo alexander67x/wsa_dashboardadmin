@@ -6,25 +6,41 @@ use App\Models\Proyecto;
 use App\Models\Tarea;
 use App\Models\Fase;
 use App\Models\Hito;
+use App\Services\ProjectAccessService;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 
 class SeguimientoService
 {
     public function getTrackingSummary(): array
     {
-        $proyectos = Proyecto::query()
+        $proyectoQuery = Proyecto::query()
             ->with([
                 'tareas:id_tarea,cod_proy,fecha_inicio,fecha_fin,estado',
                 'planificacionesSemanales:id_plan,cod_proy,semana,año,avance_esperado_porcentaje,created_at',
                 'planificacionesSemanales.ejecuciones:id_ejecucion,id_plan,avance_real_porcentaje',
             ])
-            ->orderBy('cod_proy')
-            ->get([
-                'cod_proy',
-                'nombre_ubicacion',
-                'descripcion',
-            ]);
+            ->orderBy('cod_proy');
+
+        $user = Auth::user();
+        if ($user?->empleado?->role?->slug === 'responsable_proyecto') {
+            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+            if ($allowed === null) {
+                // no-op
+            } elseif (empty($allowed)) {
+                $proyectoQuery->whereRaw('1 = 0');
+            } else {
+                $proyectoQuery->whereIn('cod_proy', $allowed);
+            }
+        }
+
+        $proyectos = $proyectoQuery->get([
+            'cod_proy',
+            'nombre_ubicacion',
+            'descripcion',
+        ]);
 
         $projectOptions = $proyectos->map(function (Proyecto $proyecto) {
             $nombre = $proyecto->nombre_ubicacion ?? $proyecto->descripcion ?? $proyecto->cod_proy;
@@ -50,7 +66,7 @@ class SeguimientoService
 
     public function getGanttData(): array
     {
-        $proyectos = Proyecto::query()
+        $proyectoQuery = Proyecto::query()
             ->with([
                 'tareas' => function ($query) {
                     $query
@@ -63,12 +79,26 @@ class SeguimientoService
                 'fases:id_fase,cod_proy,nombre_fase,fecha_inicio,fecha_fin,orden',
                 'hitos:id_hito,cod_proy,id_fase,titulo,fecha_hito,fecha_final_hito,es_critico,estado',
             ])
-            ->orderBy('cod_proy')
-            ->get([
-                'cod_proy',
-                'nombre_ubicacion',
-                'descripcion',
-            ]);
+            ->orderBy('cod_proy');
+
+        $user = Auth::user();
+        if ($user?->empleado?->role?->slug === 'responsable_proyecto') {
+            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+            if ($allowed === null) {
+                // no-op
+            } elseif (empty($allowed)) {
+                $proyectoQuery->whereRaw('1 = 0');
+            } else {
+                $proyectoQuery->whereIn('cod_proy', $allowed);
+            }
+        }
+
+        $proyectos = $proyectoQuery->get([
+            'cod_proy',
+            'nombre_ubicacion',
+            'descripcion',
+        ]);
 
         $projectOptions = $proyectos->map(function (Proyecto $proyecto) {
             $nombre = $proyecto->nombre_ubicacion ?? $proyecto->descripcion ?? $proyecto->cod_proy;

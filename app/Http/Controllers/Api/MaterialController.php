@@ -574,6 +574,12 @@ class MaterialController extends Controller
 			'deliveries.*.lotId' => ['nullable', 'integer', 'exists:lote_material,id_lote'],
 			'deliveries.*.lotNumber' => ['nullable', 'string', 'max:255'],
 			'deliveries.*.observations' => ['nullable', 'string', 'max:500'],
+			'observations' => ['nullable', 'string', 'max:1000'],
+			'images' => ['nullable', 'array'],
+			'images.*.url' => ['required', 'url', 'max:2048'],
+			'images.*.latitude' => ['nullable', 'numeric'],
+			'images.*.longitude' => ['nullable', 'numeric'],
+			'images.*.takenAt' => ['nullable', 'date'],
 		]);
 
 		$user = $request->user();
@@ -624,7 +630,9 @@ class MaterialController extends Controller
 			$lotesCreados = [];
 			$entregasCreadas = [];
 
-			foreach ($data['deliveries'] as $delivery) {
+			$imagenes = collect($data['images'] ?? [])->values();
+
+			foreach ($data['deliveries'] as $index => $delivery) {
 				$item = $solicitud->items->find($delivery['itemId']);
 				
 				if (!$item) {
@@ -718,6 +726,9 @@ class MaterialController extends Controller
 				$contadorEntrega = $ultimaEntrega ? (int) substr($ultimaEntrega->numero_entrega, -4) + 1 : 1;
 				$numeroEntrega = 'ENT-' . str_pad($contadorEntrega, 4, '0', STR_PAD_LEFT);
 
+				$imagenEntrega = $imagenes->get($index) ?? $imagenes->first();
+				$fotoEntregaUrl = $imagenEntrega['url'] ?? null;
+
 				// Crear registro de entrega (MaterialDelivery)
 				$materialDelivery = MaterialDelivery::create([
 					'numero_entrega' => $numeroEntrega,
@@ -737,6 +748,7 @@ class MaterialController extends Controller
 					'observaciones' => $observacionesEntrega,
 					'estado' => 'en_transito',
 					'fecha_recepcion' => null,
+					'foto_recepcion_url' => $fotoEntregaUrl,
 				]);
 
 				$entregasCreadas[] = $materialDelivery;

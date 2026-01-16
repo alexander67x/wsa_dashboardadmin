@@ -77,7 +77,6 @@ class DeliveriesRelationManager extends RelationManager
                     ->height(80)
                     ->url(fn (?string $state) => $state, true)
                     ->openUrlInNewTab()
-                    ->visible(fn ($record) => ! empty($record->foto_recepcion_url))
                     ->placeholder('Sin foto'),
             ])
             ->filters([])
@@ -94,7 +93,7 @@ class DeliveriesRelationManager extends RelationManager
         }
 
         if ($ownerRecord instanceof SolicitudMaterial) {
-            return $ownerRecord->estado === 'enviado';
+            return in_array($ownerRecord->estado, ['enviado', 'recibida'], true);
         }
 
         return true;

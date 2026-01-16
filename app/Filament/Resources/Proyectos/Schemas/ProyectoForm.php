@@ -23,7 +23,7 @@ class ProyectoForm
         return $schema
             ->components([
                 TextInput::make('cod_proy')
-                    ->label('C�digo del Proyecto')
+                    ->label('Código del Proyecto')
                     ->required()
                     ->unique(ignoreRecord: true)
                     ->maxLength(255)
@@ -36,18 +36,18 @@ class ProyectoForm
                     ->preload()
                     ->required(),
 
-                // Campos para crear la ubicaci�n integrada en proyectos
+                // Campos para crear la ubicación integrada en proyectos
                 TextInput::make('nombre_ubicacion')
-                    ->label('Nombre de la Ubicaci�n')
+                    ->label('Nombre de la Ubicación')
                     ->required()
                     ->maxLength(255)
                     ->placeholder('Ej: Obra Residencial Miraflores'),
 
                 Textarea::make('direccion')
-                    ->label('Direcci�n de la Ubicaci�n')
+                    ->label('Dirección de la Ubicación')
                     ->required()
                     ->rows(2)
-                    ->placeholder('Direcci�n completa de la obra'),
+                    ->placeholder('Dirección completa de la obra'),
 
                 TextInput::make('ciudad')
                     ->label('Ciudad')
@@ -56,17 +56,17 @@ class ProyectoForm
                     ->default('La Paz'),
 
                 TextInput::make('pais')
-                    ->label('Pa�s')
+                    ->label('País')
                     ->required()
                     ->maxLength(255)
                     ->default('Bolivia'),
 
                 // Mapa y coordenadas
                 MapPicker::make('coordenadas')
-                    ->label('Ubicaci�n en el Mapa')
+                    ->label('Ubicación en el Mapa')
                     ->columnSpanFull(),
 
-                // Campos ocultos para latitud y longitud (se llenan autom�ticamente desde el mapa)
+                // Campos ocultos para latitud y longitud (se llenan automáticamente desde el mapa)
                 TextInput::make('latitud')
                     ->label('Latitud')
                     ->numeric()
@@ -99,10 +99,10 @@ class ProyectoForm
                 Select::make('empleados')
                     ->label('Empleados Asignados')
                     ->multiple()
-                    // Usar opciones directas para evitar que Filament haga sync autom�tico
+                    // Usar opciones directas para evitar que Filament haga sync automático
                     ->options(fn () => Empleado::orderBy('nombre_completo')->pluck('nombre_completo', 'cod_empleado')->toArray())
                     ->afterStateHydrated(function (Select $component, $state, ?Proyecto $record): void {
-                        // Mantener comportamiento base de selects m�ltiples
+                        // Mantener comportamiento base de selects múltiples
                         if ($component->isMultiple() && ! is_array($state)) {
                             $component->state([]);
                         }
@@ -162,8 +162,17 @@ class ProyectoForm
                     ->default('activo')
                     ->required(),
 
+                Select::make('caracter_empresa')
+                    ->label('Carácter de la Empresa')
+                    ->options([
+                        'publico' => 'Empresa del Estado (Pública)',
+                        'privado' => 'Empresa Privada',
+                    ])
+                    ->default('publico')
+                    ->required(),
+
                 Textarea::make('descripcion')
-                    ->label('Descripci�n del Proyecto')
+                    ->label('Descripción del Proyecto')
                     ->columnSpanFull()
                     ->rows(3),
 
@@ -177,7 +186,7 @@ class ProyectoForm
                     ->downloadable()
                     ->dehydrated(false)
                     ->columnSpanFull()
-                    ->helperText('Sube archivos de cotizaciones, se versionar�n autom�ticamente (V1, V2, etc.).'),
+                    ->helperText('Sube archivos de cotizaciones, se versionarán automáticamente (V1, V2, etc.).'),
 
                 // presupuesto_inicial eliminado: gestionado fuera o no aplicable
 
@@ -201,4 +210,3 @@ class ProyectoForm
             ]);
     }
 }
-

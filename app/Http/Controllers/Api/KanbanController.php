@@ -143,6 +143,17 @@ class KanbanController extends Controller
         return [
             'id' => (string) $task->id_tarea,
             'title' => $task->titulo,
+            // Identificadores para navegación en el front
+            'taskId' => (string) $task->id_tarea,
+            'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
+            'task' => [
+                'id' => (string) $task->id_tarea,
+                'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
+            ],
+            'metadata' => [
+                'cod_proy' => $task->cod_proy ? (string) $task->cod_proy : null,
+                'cod_tarea' => (string) $task->id_tarea,
+            ],
             'authorId' => $primaryResponsible['id'] ?? null,
             'authorName' => $primaryResponsible['name'] ?? null,
             'description' => $task->descripcion,
@@ -159,6 +170,17 @@ class KanbanController extends Controller
         return [
             'id' => (string) $report->getKey(),
             'title' => $report->titulo,
+            // Identificadores para navegación en el front
+            'taskId' => $report->id_tarea ? (string) $report->id_tarea : null,
+            'projectId' => $report->cod_proy ? (string) $report->cod_proy : null,
+            'task' => $report->id_tarea ? [
+                'id' => (string) $report->id_tarea,
+                'projectId' => $report->cod_proy ? (string) $report->cod_proy : null,
+            ] : null,
+            'metadata' => [
+                'cod_proy' => $report->cod_proy ? (string) $report->cod_proy : null,
+                'cod_tarea' => $report->id_tarea ? (string) $report->id_tarea : null,
+            ],
             'authorId' => optional($report->registradoPor)?->cod_empleado ? (string) $report->registradoPor->cod_empleado : null,
             'authorName' => $report->registradoPor?->nombre_completo,
             'description' => Str::limit($report->descripcion, 280),
@@ -203,6 +225,17 @@ class KanbanController extends Controller
                 return [
                     'id' => (string) $task->id_tarea,
                     'title' => $task->titulo,
+                    // Identificadores para navegación en el front
+                    'taskId' => (string) $task->id_tarea,
+                    'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
+                    'task' => [
+                        'id' => (string) $task->id_tarea,
+                        'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
+                    ],
+                    'metadata' => [
+                        'cod_proy' => $task->cod_proy ? (string) $task->cod_proy : null,
+                        'cod_tarea' => (string) $task->id_tarea,
+                    ],
                     'authorId' => $primaryResponsible['id'] ?? null,
                     'authorName' => $primaryResponsible['name'] ?? null,
                     'description' => Str::limit($task->descripcion, 280),

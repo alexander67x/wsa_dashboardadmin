@@ -36,6 +36,7 @@ class Proyecto extends Model
         'fecha_fin_estimada',
         'fecha_fin_real',
         'estado',
+        'caracter_empresa',
         'descripcion',
         'avance_financiero',
         'gasto_real',

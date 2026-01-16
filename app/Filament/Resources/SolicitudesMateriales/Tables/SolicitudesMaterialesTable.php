@@ -2,18 +2,43 @@
 
 namespace App\Filament\Resources\SolicitudesMateriales\Tables;
 
+use App\Services\ProjectAccessService;
 use Filament\Actions\ViewAction;
 use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class SolicitudesMaterialesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['proyecto', 'solicitadoPor', 'aprobadaPor', 'items.material']))
+            ->modifyQueryUsing(function ($query) {
+                $query->with(['proyecto', 'solicitadoPor', 'aprobadaPor', 'items.material']);
+
+                $user = Auth::user();
+                if (! $user) {
+                    return $query->whereRaw('1 = 0');
+                }
+
+                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                    $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                    if ($allowed === null) {
+                        return $query;
+                    }
+
+                    if (empty($allowed)) {
+                        return $query->whereRaw('1 = 0');
+                    }
+
+                    return $query->whereIn('cod_proy', $allowed);
+                }
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('numero_solicitud')
                     ->label('Número de Solicitud')

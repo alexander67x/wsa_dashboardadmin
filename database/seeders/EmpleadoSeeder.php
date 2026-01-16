@@ -107,7 +107,7 @@ class EmpleadoSeeder extends Seeder
                     ['email' => $puesto['user']['email']],
                     [
                         'name' => $puesto['user']['name'],
-                        'password' => Hash::make($puesto['user']['password']),
+                        'password' => Hash::make($puesto['user']['password'] ?? 'password'),
                     ],
                 );
             }

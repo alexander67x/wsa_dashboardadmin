@@ -60,7 +60,23 @@ class ProjectController extends Controller
 
         $project = Proyecto::with([
             'cliente:cod_cliente,nombre_cliente',
-            'tareas:id_tarea,cod_proy,titulo,estado',
+            'tareas' => function ($query) {
+                $query->select([
+                    'id_tarea',
+                    'cod_proy',
+                    'titulo',
+                    'descripcion',
+                    'fecha_inicio',
+                    'fecha_fin',
+                    'estado',
+                    'created_at',
+                    'updated_at',
+                    'supervisor_asignado',
+                ])->with([
+                    'responsables:cod_empleado,nombre_completo',
+                    'supervisor:cod_empleado,nombre_completo',
+                ]);
+            },
             'empleados:cod_empleado,nombre_completo,cargo',
         ])->findOrFail($id);
 
@@ -82,11 +98,49 @@ class ProjectController extends Controller
                 ])
                 ->values(),
             'tasks' => $project->tareas
-                ->map(fn ($task) => [
-                    'id' => (string) $task->id_tarea,
-                    'title' => $task->titulo,
-                    'status' => $task->estado ?? 'todo',
-                ])
+                ->map(function ($task) {
+                    $primaryResponsible = $task->responsables->first();
+                    $responsableNombre = $primaryResponsible?->nombre_completo
+                        ?? $task->supervisor?->nombre_completo;
+
+                    return [
+                        // IDs
+                        'id' => (string) $task->id_tarea,
+                        'tareaId' => (string) $task->id_tarea,
+                        // Título
+                        'title' => $task->titulo,
+                        'titulo' => $task->titulo,
+                        // Descripción
+                        'description' => $task->descripcion,
+                        'descripcion' => $task->descripcion,
+                        // Responsable / asignado
+                        'responsable' => $responsableNombre,
+                        'responsable_nombre' => $responsableNombre,
+                        'responsableName' => $responsableNombre,
+                        'encargado' => $responsableNombre,
+                        'owner' => $responsableNombre,
+                        // Fechas
+                        'startDate' => optional($task->fecha_inicio)->toDateString(),
+                        'fechaInicio' => optional($task->fecha_inicio)->toDateString(),
+                        'fecha_inicio' => optional($task->fecha_inicio)->toDateString(),
+                        'dueDate' => optional($task->fecha_fin)->toDateString(),
+                        'fechaLimite' => optional($task->fecha_fin)->toDateString(),
+                        'fecha_limite' => optional($task->fecha_fin)->toDateString(),
+                        'deadline' => optional($task->fecha_fin)->toDateString(),
+                        'fechaVencimiento' => optional($task->fecha_fin)->toDateString(),
+                        'endDate' => optional($task->fecha_fin)->toDateString(),
+                        'fechaFin' => optional($task->fecha_fin)->toDateString(),
+                        'fecha_fin' => optional($task->fecha_fin)->toDateString(),
+                        'createdAt' => optional($task->created_at)->toDateTimeString(),
+                        'created_at' => optional($task->created_at)->toDateTimeString(),
+                        'fechaCreacion' => optional($task->created_at)->toDateTimeString(),
+                        'updatedAt' => optional($task->updated_at)->toDateTimeString(),
+                        'updated_at' => optional($task->updated_at)->toDateTimeString(),
+                        'fechaActualizacion' => optional($task->updated_at)->toDateTimeString(),
+                        // Estado
+                        'status' => $task->estado ?? 'todo',
+                    ];
+                })
                 ->values(),
         ];
     }

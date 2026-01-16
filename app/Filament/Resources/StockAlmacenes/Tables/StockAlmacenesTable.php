@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StockAlmacenes\Tables;
 
+use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -10,13 +11,39 @@ use Filament\Tables\Columns\IconColumn;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Filters\SelectFilter;
 use Filament\Tables\Table;
+use Illuminate\Support\Facades\Auth;
 
 class StockAlmacenesTable
 {
     public static function configure(Table $table): Table
     {
         return $table
-            ->modifyQueryUsing(fn ($query) => $query->with(['material', 'almacen']))
+            ->modifyQueryUsing(function ($query) {
+                $query->with(['material', 'almacen']);
+
+                $user = Auth::user();
+                if (! $user) {
+                    return $query->whereRaw('1 = 0');
+                }
+
+                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                    $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                    if ($allowed === null) {
+                        return $query;
+                    }
+
+                    if (empty($allowed)) {
+                        return $query->whereRaw('1 = 0');
+                    }
+
+                    return $query->whereHas('almacen', function ($almacenQuery) use ($allowed) {
+                        $almacenQuery->whereIn('cod_proy', $allowed);
+                    });
+                }
+
+                return $query;
+            })
             ->columns([
                 TextColumn::make('material.codigo_producto')
                     ->label('Código Material')
@@ -110,7 +137,32 @@ class StockAlmacenesTable
             ->filters([
                 SelectFilter::make('id_almacen')
                     ->label('Almacén')
-                    ->relationship('almacen', 'nombre')
+                    ->relationship('almacen', 'nombre', function ($almacenQuery) {
+                        if (! $almacenQuery) {
+                            return $almacenQuery;
+                        }
+
+                        $user = Auth::user();
+                        if (! $user) {
+                            return $almacenQuery->whereRaw('1 = 0');
+                        }
+
+                        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                            if ($allowed === null) {
+                                return $almacenQuery;
+                            }
+
+                            if (empty($allowed)) {
+                                return $almacenQuery->whereRaw('1 = 0');
+                            }
+
+                            return $almacenQuery->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $almacenQuery;
+                    })
                     ->searchable()
                     ->preload(),
 
@@ -136,18 +188,37 @@ class StockAlmacenesTable
                         return $query;
                     }),
             ])
-            ->recordActions([
-                ViewAction::make(),
-                EditAction::make(),
-            ])
-            ->toolbarActions([
-                BulkActionGroup::make([
-                    DeleteBulkAction::make(),
-                ]),
-            ])
+            ->recordActions(function () {
+                $user = Auth::user();
+
+                // Gerente General: solo ver stock existente
+                if ($user && $user->empleado?->role?->slug === 'gerencia') {
+                    return [
+                        ViewAction::make(),
+                    ];
+                }
+
+                return [
+                    ViewAction::make(),
+                    EditAction::make(),
+                ];
+            })
+            ->toolbarActions(function () {
+                $user = Auth::user();
+
+                if ($user && $user->empleado?->role?->slug === 'gerencia') {
+                    // Sin acciones masivas destructivas para Gerencia
+                    return [];
+                }
+
+                return [
+                    BulkActionGroup::make([
+                        DeleteBulkAction::make(),
+                    ]),
+                ];
+            })
             ->defaultSort('updated_at', 'desc')
             ->striped()
             ->paginated([10, 25, 50, 100]);
     }
 }
-
