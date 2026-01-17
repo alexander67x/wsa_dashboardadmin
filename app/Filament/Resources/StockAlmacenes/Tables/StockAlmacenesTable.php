@@ -188,35 +188,34 @@ class StockAlmacenesTable
                         return $query;
                     }),
             ])
-            ->recordActions(function () {
-                $user = Auth::user();
+            ->recordActions([
+                ViewAction::make(),
+                EditAction::make()
+                    ->visible(function () {
+                        $user = Auth::user();
 
-                // Gerente General: solo ver stock existente
-                if ($user && $user->empleado?->role?->slug === 'gerencia') {
-                    return [
-                        ViewAction::make(),
-                    ];
-                }
+                        // Gerencia solo puede ver, no editar.
+                        if ($user && $user->empleado?->role?->slug === 'gerencia') {
+                            return false;
+                        }
 
-                return [
-                    ViewAction::make(),
-                    EditAction::make(),
-                ];
-            })
-            ->toolbarActions(function () {
-                $user = Auth::user();
+                        return true;
+                    }),
+            ])
+            ->toolbarActions([
+                BulkActionGroup::make([
+                    DeleteBulkAction::make(),
+                ])->visible(function () {
+                    $user = Auth::user();
 
-                if ($user && $user->empleado?->role?->slug === 'gerencia') {
-                    // Sin acciones masivas destructivas para Gerencia
-                    return [];
-                }
+                    // Sin acciones masivas destructivas para Gerencia.
+                    if ($user && $user->empleado?->role?->slug === 'gerencia') {
+                        return false;
+                    }
 
-                return [
-                    BulkActionGroup::make([
-                        DeleteBulkAction::make(),
-                    ]),
-                ];
-            })
+                    return true;
+                }),
+            ])
             ->defaultSort('updated_at', 'desc')
             ->striped()
             ->paginated([10, 25, 50, 100]);
