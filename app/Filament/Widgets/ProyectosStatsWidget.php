@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Filament\Resources\Proyectos\ProyectoResource;
 use App\Models\Proyecto;
 use Carbon\Carbon;
 use Filament\Widgets\StatsOverviewWidget;
@@ -30,32 +31,39 @@ class ProyectosStatsWidget extends StatsOverviewWidget
             Stat::make('Total Proyectos', $totalProyectos)
                 ->description('Todos los proyectos')
                 ->descriptionIcon('heroicon-m-folder')
-                ->color('primary'),
+                ->color('primary')
+                ->url(ProyectoResource::getUrl('index')),
 
             Stat::make('Proyectos Activos', $activos)
                 ->description('En ejecución')
                 ->descriptionIcon('heroicon-m-play')
-                ->color('success'),
+                ->color('success')
+                ->url(ProyectoResource::getUrl('index')),
 
             Stat::make('Proyectos Completados', $completados)
                 ->description('Finalizados')
                 ->descriptionIcon('heroicon-m-check-circle')
-                ->color('info'),
+                ->color('info')
+                ->url(ProyectoResource::getUrl('index')),
 
             Stat::make('Proyectos en Atraso', $enAtraso)
                 ->description('Activos con fecha fin vencida')
                 ->descriptionIcon('heroicon-m-exclamation-triangle')
-                ->color($enAtraso > 0 ? 'danger' : 'success'),
+                ->color($enAtraso > 0 ? 'danger' : 'success')
+                ->url(ProyectoResource::getUrl('index')),
 
             Stat::make('Proyectos por Iniciar', $porIniciar)
                 ->description('Con fecha inicio futura')
                 ->descriptionIcon('heroicon-m-calendar-days')
-                ->color('warning'),
+                ->color('warning')
+                ->url(ProyectoResource::getUrl('index')),
 
             Stat::make('Proyectos Cancelados', $cancelados)
                 ->description('No ejecutados')
                 ->descriptionIcon('heroicon-m-x-circle')
-                ->color('gray'),
+                ->color('gray')
+                ->url(ProyectoResource::getUrl('index')),
         ];
     }
 }
+
