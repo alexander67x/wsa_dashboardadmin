@@ -41,12 +41,12 @@ class MapPicker extends Field
 
         $livewire = method_exists($this, 'getLivewire') ? $this->getLivewire() : null;
 
-        // Por defecto el mapa es editable, excepto en páginas específicas
+        // Por defecto el mapa es editable; limitar solo si se solicita o es solo lectura.
         $isEditable = true;
 
-        if ($livewire instanceof \App\Filament\Resources\Proyectos\Pages\CreateProyecto
-            || $livewire instanceof \App\Filament\Resources\Proyectos\Pages\ViewProyecto) {
-            // En proyectos, solo permitimos seleccionar ubicación en la página de edición
+        if ($this->onlyEditableOnEdit) {
+            $isEditable = $livewire instanceof \App\Filament\Resources\Proyectos\Pages\EditProyecto;
+        } elseif ($livewire instanceof \App\Filament\Resources\Proyectos\Pages\ViewProyecto) {
             $isEditable = false;
         }
         

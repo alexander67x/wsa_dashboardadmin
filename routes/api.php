@@ -71,7 +71,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('/materials/catalog', [MaterialController::class, 'catalog'])
 		->middleware('permission:inventory.view.project,inventory.view.central,projects.my.view');
     Route::get('/materials/requests', [MaterialController::class, 'index'])
-			->middleware('permission:materials.requests.view,inventory.view.project,inventory.view.central');
+			->middleware('permission:materials.requests.view,inventory.view.project,inventory.view.central,projects.my.view');
 	Route::post('/materials/requests', [MaterialController::class, 'store'])
 		->middleware('permission:materials.requests.create,materials.requests.coordinate,inventory.view.project,projects.my.view');
     Route::get('/materials/requests/{id}', [MaterialController::class, 'show'])

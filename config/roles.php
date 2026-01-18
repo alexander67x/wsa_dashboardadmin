@@ -241,6 +241,7 @@ return [
                 'reports.view',
                 'reports.approve',
                 'materials.validate.usage',
+                'materials.requests.view',
                 'materials.requests.deliver',
                 'materials.deliveries.confirm',
                 'incidents.record.high',

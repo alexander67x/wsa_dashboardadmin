@@ -43,6 +43,9 @@ class StockRelationManager extends RelationManager
 
     public function table(Tables\Table $table): Tables\Table
     {
+        $user = Auth::user();
+        $isGerencia = $user && $user->empleado?->role?->slug === 'gerencia';
+
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('material.codigo_producto')
@@ -65,30 +68,12 @@ class StockRelationManager extends RelationManager
                     ->numeric(2)
                     ->sortable(),
             ])
-            ->headerActions(function () {
-                $user = Auth::user();
-
-                // Gerente General: sin crear stock desde el almacén
-                if ($user && $user->empleado?->role?->slug === 'gerencia') {
-                    return [];
-                }
-
-                return [
-                    CreateAction::make(),
-                ];
-            })
-            ->actions(function () {
-                $user = Auth::user();
-
-                // Gerente General: solo visualiza, no edita ni elimina
-                if ($user && $user->empleado?->role?->slug === 'gerencia') {
-                    return [];
-                }
-
-                return [
-                    EditAction::make(),
-                    DeleteAction::make(),
-                ];
-            });
+            ->headerActions($isGerencia ? [] : [
+                CreateAction::make(),
+            ])
+            ->actions($isGerencia ? [] : [
+                EditAction::make(),
+                DeleteAction::make(),
+            ]);
     }
 }

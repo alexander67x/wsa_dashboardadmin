@@ -23,7 +23,7 @@ class ReportesTable
                     return $query->whereRaw('1 = 0');
                 }
 
-                if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                if (in_array($user->empleado?->role?->slug, ['responsable_proyecto', 'supervisor'], true)) {
                     $allowed = ProjectAccessService::allowedProjectIds($user);
 
                     if ($allowed === null) {
@@ -120,10 +120,26 @@ class ReportesTable
             ->filters([
                 SelectFilter::make('cod_proy')
                     ->label('Proyecto')
-                    ->options(fn () => Proyecto::orderBy('nombre_ubicacion')
-                        ->pluck('nombre_ubicacion', 'cod_proy')
-                        ->toArray()
-                    )
+                    ->options(function () {
+                        $query = Proyecto::orderBy('cod_proy');
+                        $user = Auth::user();
+
+                        if ($user && in_array($user->empleado?->role?->slug, ['responsable_proyecto', 'supervisor'], true)) {
+                            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                            if ($allowed === null) {
+                            return $query->pluck('cod_proy', 'cod_proy')->toArray();
+                            }
+
+                            if (empty($allowed)) {
+                                return [];
+                            }
+
+                            $query->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $query->pluck('cod_proy', 'cod_proy')->toArray();
+                    })
                     ->searchable()
                     ->preload(),
                 SelectFilter::make('estado')

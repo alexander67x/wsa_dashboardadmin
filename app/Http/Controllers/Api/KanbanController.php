@@ -36,13 +36,14 @@ class KanbanController extends Controller
 
         ProjectAccessService::ensureCanAccess($request->user(), $projectId);
 
+        // Reportes de avance para el tablero clásico
         $reports = ReporteAvanceTarea::with(['registradoPor', 'archivos'])
             ->where('cod_proy', $projectId)
             ->orderByDesc('fecha_reporte')
             ->get();
 
         $board = [
-            'En revisión' => [],
+            'En revisi¢n' => [],
             'Aprobado' => [],
             'Rechazado' => [],
             'Reenviado' => [],
@@ -54,7 +55,51 @@ class KanbanController extends Controller
             $board[$column][] = $this->transformReportCard($report);
         }
 
+        // Listado plano de tareas (como antes)
         $board['Tareas'] = $this->tasksForProject($projectId);
+
+        // Estructura simplificada de 3 tableros basada en tareas:
+        // - pendiente: tareas sin reportes de avance
+        // - revision: tareas con reportes en revisión (enviados/borrador)
+        // - finalizada: tareas con estado finalizada
+        $tasks = Tarea::with('responsables')
+            ->where('cod_proy', $projectId)
+            ->get();
+
+        $reportsByTask = $reports->groupBy('id_tarea');
+
+        $pending = [];
+        $inReview = [];
+        $completed = [];
+
+        foreach ($tasks as $task) {
+            $card = $this->transformTaskCard($task);
+            $taskReports = $reportsByTask->get($task->id_tarea) ?? collect();
+
+            // Tareas finalizadas van siempre al tablero de "finalizada"
+            if ($task->estado === 'finalizada') {
+                $completed[] = $card;
+                continue;
+            }
+
+            // Tareas con reportes en estado de revisión (enviados o borrador)
+            $hasReviewReports = $taskReports->contains(function (ReporteAvanceTarea $report) {
+                return in_array($report->estado, ['enviado', 'borrador'], true);
+            });
+
+            if ($hasReviewReports) {
+                $inReview[] = $card;
+                continue;
+            }
+
+            // Resto de tareas (sin reportes o solo rechazados) se consideran pendientes
+            $pending[] = $card;
+        }
+
+        // Agregar estructura simplificada al payload
+        $board['pendiente'] = $pending;
+        $board['revision'] = $inReview;
+        $board['finalizada'] = $completed;
 
         return $board;
     }
@@ -68,7 +113,7 @@ class KanbanController extends Controller
         ]);
 
         return response()->json([
-            'message' => 'Las columnas del tablero se generan automáticamente a partir del estado del reporte.',
+            'message' => 'Las columnas del tablero se generan autom ticamente a partir del estado del reporte.',
         ], 202);
     }
 
@@ -79,7 +124,7 @@ class KanbanController extends Controller
         $data = $request->validate([
             'projectId' => ['required', 'string', 'exists:proyectos,cod_proy'],
             'taskId' => ['required', 'integer', 'exists:tareas,id_tarea'],
-            'column' => ['required', Rule::in(['En revisión', 'Reenviado'])],
+            'column' => ['required', Rule::in(['En revisi¢n', 'Reenviado'])],
             'card' => ['required', 'array'],
             'card.title' => ['required', 'string', 'max:255'],
             'card.description' => ['required', 'string'],
@@ -143,7 +188,7 @@ class KanbanController extends Controller
         return [
             'id' => (string) $task->id_tarea,
             'title' => $task->titulo,
-            // Identificadores para navegación en el front
+            // Identificadores para navegaci¢n en el front
             'taskId' => (string) $task->id_tarea,
             'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
             'task' => [
@@ -170,7 +215,7 @@ class KanbanController extends Controller
         return [
             'id' => (string) $report->getKey(),
             'title' => $report->titulo,
-            // Identificadores para navegación en el front
+            // Identificadores para navegaci¢n en el front
             'taskId' => $report->id_tarea ? (string) $report->id_tarea : null,
             'projectId' => $report->cod_proy ? (string) $report->cod_proy : null,
             'task' => $report->id_tarea ? [
@@ -197,7 +242,7 @@ class KanbanController extends Controller
             'aprobado' => 'Aprobado',
             'rechazado' => 'Rechazado',
             'borrador' => 'Reenviado',
-            default => 'En revisión',
+            default => 'En revisi¢n',
         };
     }
 
@@ -209,6 +254,35 @@ class KanbanController extends Controller
         };
     }
 
+    protected function transformTaskCard(Tarea $task): array
+    {
+        $responsibles = $this->serializeResponsables($task);
+        $primaryResponsible = $responsibles[0] ?? null;
+
+        return [
+            'id' => (string) $task->id_tarea,
+            'title' => $task->titulo,
+            // Identificadores para navegaci¢n en el front
+            'taskId' => (string) $task->id_tarea,
+            'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
+            'task' => [
+                'id' => (string) $task->id_tarea,
+                'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
+            ],
+            'metadata' => [
+                'cod_proy' => $task->cod_proy ? (string) $task->cod_proy : null,
+                'cod_tarea' => (string) $task->id_tarea,
+            ],
+            'authorId' => $primaryResponsible['id'] ?? null,
+            'authorName' => $primaryResponsible['name'] ?? null,
+            'description' => Str::limit($task->descripcion, 280),
+            'photos' => [],
+            'createdAt' => optional($task->created_at)->toDateTimeString(),
+            'responsibleIds' => collect($responsibles)->pluck('id')->all(),
+            'responsibles' => $responsibles,
+        ];
+    }
+
     protected function tasksForProject(string $projectId): array
     {
         ProjectAccessService::ensureCanAccess(request()->user(), $projectId);
@@ -216,35 +290,8 @@ class KanbanController extends Controller
         return Tarea::with('responsables')
             ->where('cod_proy', $projectId)
             ->orderByDesc('updated_at')
-            ->limit(20)
             ->get()
-            ->map(function (Tarea $task) {
-                $responsibles = $this->serializeResponsables($task);
-                $primaryResponsible = $responsibles[0] ?? null;
-
-                return [
-                    'id' => (string) $task->id_tarea,
-                    'title' => $task->titulo,
-                    // Identificadores para navegación en el front
-                    'taskId' => (string) $task->id_tarea,
-                    'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
-                    'task' => [
-                        'id' => (string) $task->id_tarea,
-                        'projectId' => $task->cod_proy ? (string) $task->cod_proy : null,
-                    ],
-                    'metadata' => [
-                        'cod_proy' => $task->cod_proy ? (string) $task->cod_proy : null,
-                        'cod_tarea' => (string) $task->id_tarea,
-                    ],
-                    'authorId' => $primaryResponsible['id'] ?? null,
-                    'authorName' => $primaryResponsible['name'] ?? null,
-                    'description' => Str::limit($task->descripcion, 280),
-                    'photos' => [],
-                    'createdAt' => optional($task->created_at)->toDateTimeString(),
-                    'responsibleIds' => collect($responsibles)->pluck('id')->all(),
-                    'responsibles' => $responsibles,
-                ];
-            })
+            ->map(fn (Tarea $task) => $this->transformTaskCard($task))
             ->values()
             ->all();
     }
@@ -252,7 +299,7 @@ class KanbanController extends Controller
     protected function emptyBoard(): array
     {
         return [
-            'En revisión' => [],
+            'En revisi¢n' => [],
             'Aprobado' => [],
             'Rechazado' => [],
             'Reenviado' => [],

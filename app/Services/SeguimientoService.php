@@ -185,13 +185,35 @@ class SeguimientoService
 
         $hasMultipleYears = $planificaciones->pluck('año')->unique()->count() > 1;
         $totalTareas = max($proyecto->tareas->count(), 1);
+        $hasExplicitPlanned = $planificaciones
+            ->pluck('avance_esperado_porcentaje')
+            ->filter(fn ($value) => $value !== null && $value > 0)
+            ->isNotEmpty();
         $labels = [];
         $weeklyPercentages = [];
         $totalPercentages = [];
         $curvePercentages = [];
         $detail = [];
         $acumuladoCompletadas = 0;
+        $acumuladoPlanificadas = 0;
         $plannedCurvePercentages = [];
+
+        if ($planificaciones->isNotEmpty()) {
+            $labels[] = 'Inicio';
+            $weeklyPercentages[] = 0.0;
+            $totalPercentages[] = 0.0;
+            $curvePercentages[] = 0.0;
+            $plannedCurvePercentages[] = 0.0;
+            $detail[] = [
+                'semana' => 'Inicio',
+                'planificado' => 0.0,
+                'avance_real' => 0.0,
+                'tareas_planificadas' => 0,
+                'tareas_completadas' => 0,
+                'cumplimiento_tareas' => 0.0,
+                'avance_total' => 0.0,
+            ];
+        }
 
         foreach ($planificaciones as $plan) {
             $weekPeriod = $this->getWeekPeriod((int) $plan->año, (int) $plan->semana);
@@ -206,7 +228,10 @@ class SeguimientoService
             $totalPercent = round(min(100, ($acumuladoCompletadas / $totalTareas) * 100), 2);
 
             $curvePercent = $totalPercent;
-            $plannedCurve = round((float) ($plan->avance_esperado_porcentaje ?? 0), 2);
+            $acumuladoPlanificadas += $plannedTasks;
+            $plannedCurve = $hasExplicitPlanned
+                ? round((float) ($plan->avance_esperado_porcentaje ?? 0), 2)
+                : round(min(100, ($acumuladoPlanificadas / $totalTareas) * 100), 2);
 
             $label = sprintf('Semana %02d', $plan->semana);
             if ($hasMultipleYears) {
@@ -221,7 +246,7 @@ class SeguimientoService
 
             $detail[] = [
                 'semana' => $label,
-                'planificado' => round((float) ($plan->avance_esperado_porcentaje ?? 0), 2),
+                'planificado' => $plannedCurve,
                 'avance_real' => $curvePercent,
                 'tareas_planificadas' => $plannedTasks,
                 'tareas_completadas' => $completedTasks,

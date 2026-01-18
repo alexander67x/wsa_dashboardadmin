@@ -102,6 +102,14 @@ class ViewReporte extends ViewRecord
                 'aprobado_por' => $empleado->cod_empleado,
             ]);
 
+            $this->record->loadMissing('tarea');
+            if ($this->record->tarea && $this->record->tarea->estado !== 'finalizada') {
+                $this->record->tarea->update([
+                    'estado' => 'finalizada',
+                    'fecha_fin' => $this->record->fecha_reporte ?? now(),
+                ]);
+            }
+
             // Restar materiales del stock si el reporte tiene materiales
             $materialesUsados = $this->record->materiales;
 

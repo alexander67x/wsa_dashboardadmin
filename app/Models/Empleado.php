@@ -134,6 +134,11 @@ class Empleado extends Model
             return true;
         }
 
+        // Supervisores deben poder ver el detalle de solicitudes de materiales
+        if ($this->role?->slug === 'supervisor' && $permission === 'materials.requests.view') {
+            return true;
+        }
+
         return in_array($permission, $this->permissionCodes(), true);
     }
 }

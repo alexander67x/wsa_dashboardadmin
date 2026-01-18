@@ -55,6 +55,7 @@ class ReportController extends Controller
             'aprobadoPor',
             'archivos',
             'historiales.creadoPor',
+            'materiales.material',
         ])->findOrFail($id);
 
         return $this->transformReportDetail($report);
@@ -70,7 +71,7 @@ class ReportController extends Controller
             'description' => ['required', 'string'],
             'reportDate' => ['nullable', 'date'],
             'difficulties' => ['nullable', 'string'],
-            'materialsUsed' => ['nullable', 'string'],
+            'materialsUsed' => ['required', 'string'],
             'observations' => ['nullable', 'string'],
             'images' => ['nullable', 'array'],
             'images.*.url' => ['required', 'url'],
@@ -155,7 +156,7 @@ class ReportController extends Controller
             'description' => ['nullable', 'string'],
             'reportDate' => ['nullable', 'date'],
             'difficulties' => ['nullable', 'string'],
-            'materialsUsed' => ['nullable', 'string'],
+            'materialsUsed' => ['required', 'string'],
             'observations' => ['nullable', 'string'],
             'images' => ['nullable', 'array'],
             'images.*.url' => ['required', 'url'],
@@ -376,6 +377,16 @@ class ReportController extends Controller
                 'aprobado_por' => $empleado->cod_empleado,
             ]);
 
+            if ($report->id_tarea) {
+                $tarea = Tarea::whereKey($report->id_tarea)->lockForUpdate()->first();
+                if ($tarea && $tarea->estado !== 'finalizada') {
+                    $tarea->update([
+                        'estado' => 'finalizada',
+                        'fecha_fin' => $report->fecha_reporte ?? now(),
+                    ]);
+                }
+            }
+
             return $report;
         });
 
@@ -453,6 +464,7 @@ class ReportController extends Controller
             'type' => 'progress',
             'status' => $this->mapEstadoToStatus($report->estado),
             'progress' => null,
+            'materialsUsed' => $report->materiales_utilizados,
             'authorId' => optional($report->registradoPor)?->cod_empleado ? (string) $report->registradoPor->cod_empleado : null,
             'authorName' => $report->registradoPor?->nombre_completo,
         ];
@@ -536,6 +548,18 @@ class ReportController extends Controller
             'feedback' => $report->observaciones_supervisor,
             'difficulties' => $report->dificultades_encontradas,
             'materialsUsed' => $report->materiales_utilizados,
+            'materials' => $report->materiales
+                ? $report->materiales->map(function (ReporteMaterial $material) {
+                    return [
+                        'id' => (string) $material->getKey(),
+                        'materialId' => (int) $material->id_material,
+                        'materialName' => $material->material?->nombre_producto,
+                        'quantity' => (float) $material->cantidad_usada,
+                        'unit' => $material->unidad_medida,
+                        'observations' => $material->observaciones,
+                    ];
+                })->values()->all()
+                : [],
             'history' => $this->transformReportHistory($report),
         ];
     }

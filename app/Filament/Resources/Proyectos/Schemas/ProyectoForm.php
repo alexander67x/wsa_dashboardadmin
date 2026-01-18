@@ -181,6 +181,7 @@ class ProyectoForm
                     ->multiple()
                     ->disk('public')
                     ->directory('proyectos/cotizaciones')
+                    ->maxSize(51200)
                     ->preserveFilenames()
                     ->openable()
                     ->downloadable()

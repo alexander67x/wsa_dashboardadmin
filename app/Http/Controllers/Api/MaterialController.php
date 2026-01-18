@@ -11,6 +11,7 @@ use App\Models\Empleado;
 use App\Models\MaterialDelivery;
 use App\Models\SolicitudHistorial;
 use App\Services\OneSignalService;
+use App\Services\ProjectAccessService;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 
@@ -63,6 +64,15 @@ class MaterialController extends Controller
 
 		$query = SolicitudMaterial::with(['proyecto', 'solicitadoPor', 'items.material'])
 			->orderBy('fecha_solicitud', 'desc');
+
+		$allowed = ProjectAccessService::allowedProjectIds($user);
+		if ($allowed !== null) {
+			if (empty($allowed)) {
+				$query->whereRaw('1 = 0');
+			} else {
+				$query->whereIn('cod_proy', $allowed);
+			}
+		}
 
 		// Filtrar por proyecto si se proporciona
 		if ($request->has('projectId')) {
