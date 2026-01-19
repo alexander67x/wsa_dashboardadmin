@@ -227,6 +227,7 @@ return [
                 'incidents.view',
                 'materials.requests.create',
                 'materials.requests.view',
+                'materials.requests.deliver',
                 'attendance.view',
             ],
         ],

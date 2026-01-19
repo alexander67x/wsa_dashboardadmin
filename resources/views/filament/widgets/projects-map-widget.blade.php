@@ -6,6 +6,12 @@
 
 @push('styles')
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        #projects-map {
+            position: relative;
+            z-index: 0;
+        }
+    </style>
 @endpush
 
 @push('scripts')
@@ -53,4 +59,3 @@
         })()
     </script>
 @endpush
-

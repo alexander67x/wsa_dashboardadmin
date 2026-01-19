@@ -12,6 +12,8 @@ class MaterialesStatsWidget extends StatsOverviewWidget
 {
     protected static ?int $sort = 21;
 
+    protected int | string | array $columnSpan = 'full';
+
     protected function getStats(): array
     {
         $totalMateriales = Material::where('activo', true)->count();

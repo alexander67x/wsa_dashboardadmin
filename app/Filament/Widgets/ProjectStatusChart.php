@@ -2,6 +2,7 @@
 
 namespace App\Filament\Widgets;
 
+use App\Services\SeguimientoService;
 use App\Models\Proyecto;
 use Filament\Widgets\ChartWidget;
 
@@ -9,13 +10,13 @@ class ProjectStatusChart extends ChartWidget
 {
     protected static ?int $sort = 99;
 
-    protected ?string $heading = 'Estado de proyectos';
+    protected ?string $heading = 'Avance de proyectos (tareas vs planificación)';
 
     protected string $color = 'primary';
 
     protected function getType(): string
     {
-        return 'doughnut';
+        return 'bar';
     }
 
     /**
@@ -23,26 +24,34 @@ class ProjectStatusChart extends ChartWidget
      */
     protected function getData(): array
     {
-        $estados = [
-            'activo' => 'Activo',
-            'completado' => 'Completado',
-            'pausado' => 'Pausado',
-            'cancelado' => 'Cancelado',
-        ];
+        /** @var SeguimientoService $service */
+        $service = app(SeguimientoService::class);
 
-        $labels = [];
-        $values = [];
+        $tracking = $service->getTrackingSummary();
+        $series = collect($tracking['projectSeries'] ?? []);
 
-        foreach ($estados as $key => $label) {
-            $labels[] = $label;
-            $values[] = Proyecto::where('estado', $key)->count();
-        }
+        $projects = $series
+            ->map(function (array $project): array {
+                $totals = $project['total'] ?? [];
+                $current = ! empty($totals) ? (float) end($totals) : 0.0;
+
+                return [
+                    'nombre' => $project['nombre'] ?? $project['codigo'] ?? 'Proyecto',
+                    'avance' => max(0.0, min(100.0, $current)),
+                ];
+            })
+            ->sortByDesc('avance')
+            ->values()
+            ->all();
+
+        $labels = array_map(fn ($p) => $p['nombre'], $projects);
+        $values = array_map(fn ($p) => $p['avance'], $projects);
 
         return [
             'labels' => $labels,
             'datasets' => [
                 [
-                    'label' => 'Cantidad de proyectos',
+                    'label' => 'Avance de proyecto (%)',
                     'data' => $values,
                 ],
             ],

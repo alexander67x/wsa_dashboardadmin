@@ -403,7 +403,7 @@ class ReportController extends Controller
     public function reject(Request $request, string $id): JsonResponse
     {
         $data = $request->validate([
-            'observations' => ['required', 'string', 'max:500'],
+            'observations' => ['nullable', 'string', 'max:500'],
         ]);
 
         $user = $request->user();
@@ -433,7 +433,7 @@ class ReportController extends Controller
 
             $report->update([
                 'estado' => 'rechazado',
-                'observaciones_supervisor' => $data['observations'],
+                'observaciones_supervisor' => $data['observations'] ?? null,
                 'fecha_aprobacion' => now(),
                 'aprobado_por' => $empleado->cod_empleado,
             ]);
@@ -443,7 +443,7 @@ class ReportController extends Controller
 
         $report->load(['proyecto', 'tarea', 'registradoPor', 'aprobadoPor', 'archivos', 'historiales.creadoPor']);
 
-        $this->notifyReportStatusChange($report, 'rechazado', $data['observations']);
+        $this->notifyReportStatusChange($report, 'rechazado', $data['observations'] ?? null);
 
         return response()->json([
             'message' => 'Reporte rechazado correctamente.',

@@ -6,13 +6,12 @@ use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
 use Filament\Http\Middleware\DisableBladeIconComponents;
 use Filament\Http\Middleware\DispatchServingFilamentEvent;
-use Filament\Pages\Dashboard;
+use App\Filament\Pages\Dashboard;
 use Filament\Panel;
 use Filament\PanelProvider;
 use Filament\Support\Facades\FilamentView;
 use Filament\Support\Colors\Color;
 use Filament\Widgets\AccountWidget;
-use Filament\Widgets\FilamentInfoWidget;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\Cookie\Middleware\EncryptCookies;
 use Illuminate\Foundation\Http\Middleware\VerifyCsrfToken;
@@ -20,6 +19,7 @@ use Illuminate\Routing\Middleware\SubstituteBindings;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
+use App\Filament\Resources\Proyectos\ProyectoResource;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -30,9 +30,21 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login()
+            ->brandLogo(fn () => asset('images/wsc-group-logo.png'))
+            ->darkModeBrandLogo(fn () => asset('images/wsc-group-logo.png'))
+            ->brandLogoHeight('3rem')
+            ->brandName('')
             ->colors([
                 'primary' => Color::Amber,
             ])
+            ->homeUrl(function () {
+                $user = auth()->user();
+                if ($user?->empleado?->role?->slug === 'responsable_proyecto') {
+                    return ProyectoResource::getUrl('index');
+                }
+
+                return Dashboard::getUrl();
+            })
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\Filament\Pages')
             ->pages([
@@ -41,7 +53,8 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
-                FilamentInfoWidget::class,
+                \App\Filament\Widgets\LeadTimeByRoleChart::class,
+                \App\Filament\Widgets\EmployeeProductivityChart::class,
             ])
             ->plugin(
                 FilamentFullCalendarPlugin::make()
@@ -81,6 +94,10 @@ class AdminPanelProvider extends PanelProvider
             ->renderHook(
                 'panels::head.end',
                 fn () => view('filament.onesignal'),
+            )
+            ->renderHook(
+                'panels::body.end',
+                fn () => view('filament.filepond-locale'),
             );
     }
 }

@@ -73,9 +73,10 @@
     .leaflet-container {
         height: 100% !important;
         width: 100% !important;
+        z-index: 0;
     }
     .fotos-map-container [id^="map-fotos-"] {
-        z-index: 1;
+        z-index: 0;
         min-height: 400px;
         position: relative;
     }

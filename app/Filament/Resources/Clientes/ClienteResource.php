@@ -35,6 +35,29 @@ class ClienteResource extends Resource
 
     protected static ?int $navigationSort = 2;
 
+    protected static function shouldHideFromProjectManager(): bool
+    {
+        return auth()->user()?->empleado?->role?->slug === 'responsable_proyecto';
+    }
+
+    public static function canAccess(): bool
+    {
+        if (static::shouldHideFromProjectManager()) {
+            return false;
+        }
+
+        return parent::canAccess();
+    }
+
+    public static function canViewAny(): bool
+    {
+        if (static::shouldHideFromProjectManager()) {
+            return false;
+        }
+
+        return parent::canViewAny();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ClienteForm::configure($schema);

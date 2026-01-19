@@ -31,6 +31,8 @@
         <style>
             .attendance-map {
                 min-height: 300px;
+                position: relative;
+                z-index: 0;
             }
         </style>
     @endpush

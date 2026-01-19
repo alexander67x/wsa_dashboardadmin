@@ -18,6 +18,12 @@ class SeguimientoCalendarWidget extends FullCalendarWidget
     protected int | string | array $columnSpan = 'full';
     public ?string $project = null;
 
+    public static function canView(): bool
+    {
+        // Ocultar este widget del dashboard principal.
+        return false;
+    }
+
     public function mount(?string $project = null): void
     {
         $this->project = $project;

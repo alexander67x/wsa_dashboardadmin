@@ -12,6 +12,8 @@ class ProyectosStatsWidget extends StatsOverviewWidget
 {
     protected static ?int $sort = 20;
 
+    protected int | string | array $columnSpan = 'full';
+
     protected function getStats(): array
     {
         $hoy = Carbon::today();
@@ -66,4 +68,3 @@ class ProyectosStatsWidget extends StatsOverviewWidget
         ];
     }
 }
-

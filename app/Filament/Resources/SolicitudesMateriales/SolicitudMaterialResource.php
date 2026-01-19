@@ -39,6 +39,29 @@ class SolicitudMaterialResource extends Resource
 
     protected static ?int $navigationSort = 6;
 
+    protected static function shouldHideFromProjectManager(): bool
+    {
+        return auth()->user()?->empleado?->role?->slug === 'responsable_proyecto';
+    }
+
+    public static function canAccess(): bool
+    {
+        if (static::shouldHideFromProjectManager()) {
+            return false;
+        }
+
+        return static::userHasPermission();
+    }
+
+    public static function canViewAny(): bool
+    {
+        if (static::shouldHideFromProjectManager()) {
+            return false;
+        }
+
+        return static::userHasPermission();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return SolicitudForm::configure($schema);
@@ -79,4 +102,3 @@ class SolicitudMaterialResource extends Resource
         return false; // Las solicitudes se eliminan desde la API
     }
 }
-

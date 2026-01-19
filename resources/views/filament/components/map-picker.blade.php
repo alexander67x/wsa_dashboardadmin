@@ -26,9 +26,10 @@
         height: 100% !important;
         width: 100% !important;
         min-height: 400px;
+        z-index: 0;
     }
     #map-{{ $field->getStatePath() }} {
-        z-index: 1;
+        z-index: 0;
         min-height: 400px;
         position: relative;
     }
