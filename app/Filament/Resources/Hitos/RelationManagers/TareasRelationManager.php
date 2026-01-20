@@ -64,7 +64,24 @@ class TareasRelationManager extends RelationManager
                         titleAttribute: 'nombre_completo',
                         modifyQueryUsing: function (Builder $query) use ($ownerProject) {
                             if ($ownerProject) {
-                                $query->whereHas('proyectos', fn ($subQuery) => $subQuery->where('proyectos.cod_proy', $ownerProject->cod_proy));
+                                $extraIds = collect([$ownerProject->responsable_proyecto, $ownerProject->supervisor_obra])
+                                    ->filter()
+                                    ->unique()
+                                    ->values();
+
+                                $query->where(function (Builder $inner) use ($ownerProject, $extraIds) {
+                                    $inner->whereHas('asignaciones', fn ($subQuery) => $subQuery
+                                        ->where('cod_proy', $ownerProject->cod_proy)
+                                        ->where(function ($statusQuery) {
+                                            $statusQuery
+                                                ->where('estado', 'activo')
+                                                ->orWhereNull('estado');
+                                        }));
+
+                                    if ($extraIds->isNotEmpty()) {
+                                        $inner->orWhereIn('cod_empleado', $extraIds->all());
+                                    }
+                                });
                             }
                         }
                     )
@@ -76,7 +93,35 @@ class TareasRelationManager extends RelationManager
 
                 Select::make('supervisor_asignado')
                     ->label('Supervisor')
-                    ->relationship('supervisor', 'nombre_completo')
+                    ->relationship(
+                        'supervisor',
+                        'nombre_completo',
+                        modifyQueryUsing: function (Builder $query) use ($ownerProject) {
+                            if (! $ownerProject) {
+                                $query->whereRaw('1 = 0');
+                                return;
+                            }
+
+                            $extraIds = collect([$ownerProject->responsable_proyecto, $ownerProject->supervisor_obra])
+                                ->filter()
+                                ->unique()
+                                ->values();
+
+                            $query->where(function (Builder $inner) use ($ownerProject, $extraIds) {
+                                $inner->whereHas('asignaciones', fn ($subQuery) => $subQuery
+                                    ->where('cod_proy', $ownerProject->cod_proy)
+                                    ->where(function ($statusQuery) {
+                                        $statusQuery
+                                            ->where('estado', 'activo')
+                                            ->orWhereNull('estado');
+                                    }));
+
+                                if ($extraIds->isNotEmpty()) {
+                                    $inner->orWhereIn('cod_empleado', $extraIds->all());
+                                }
+                            });
+                        }
+                    )
                     ->searchable()
                     ->preload()
                     ->columnSpan(2),

@@ -5,6 +5,7 @@ namespace App\Filament\Pages;
 use App\Services\ResendMailService;
 use App\Models\KanbanBoard;
 use App\Models\KanbanColumn;
+use App\Models\Empleado;
 use App\Models\Proyecto;
 use App\Models\Tarea;
 use App\Models\AsignacionProyecto;
@@ -127,9 +128,34 @@ class Planificacion extends Page
 
     public function getEmpleadosProperty(): Collection
     {
-        if (!$this->codProy) return new Collection();
-        $proyecto = Proyecto::with('empleados')->where('cod_proy', $this->codProy)->first();
-        return $proyecto?->empleados ?? new Collection();
+        if (!$this->codProy) {
+            return new Collection();
+        }
+
+        $project = Proyecto::query()
+            ->where('cod_proy', $this->codProy)
+            ->first(['responsable_proyecto', 'supervisor_obra']);
+        $extraIds = collect([$project?->responsable_proyecto, $project?->supervisor_obra])
+            ->filter()
+            ->unique()
+            ->values();
+
+        return Empleado::query()
+            ->where(function ($query) use ($extraIds) {
+                $query->whereHas('asignaciones', fn ($subQuery) => $subQuery
+                    ->where('cod_proy', $this->codProy)
+                    ->where(function ($statusQuery) {
+                        $statusQuery
+                            ->where('estado', 'activo')
+                            ->orWhereNull('estado');
+                    }));
+
+                if ($extraIds->isNotEmpty()) {
+                    $query->orWhereIn('cod_empleado', $extraIds->all());
+                }
+            })
+            ->orderBy('nombre_completo')
+            ->get();
     }
 
     public function createTarea(): void

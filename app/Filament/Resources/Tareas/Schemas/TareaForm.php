@@ -112,7 +112,29 @@ class TareaForm
                             $codProy = $get('cod_proy');
 
                             if ($codProy) {
-                                $query->whereHas('proyectos', fn ($subQuery) => $subQuery->where('proyectos.cod_proy', $codProy));
+                                $project = Proyecto::query()
+                                    ->where('cod_proy', $codProy)
+                                    ->first(['responsable_proyecto', 'supervisor_obra']);
+                                $extraIds = collect([$project?->responsable_proyecto, $project?->supervisor_obra])
+                                    ->filter()
+                                    ->unique()
+                                    ->values();
+
+                                $query->where(function (Builder $inner) use ($codProy, $extraIds) {
+                                    $inner->whereHas('asignaciones', fn ($subQuery) => $subQuery
+                                        ->where('cod_proy', $codProy)
+                                        ->where(function ($statusQuery) {
+                                            $statusQuery
+                                                ->where('estado', 'activo')
+                                                ->orWhereNull('estado');
+                                        }));
+
+                                    if ($extraIds->isNotEmpty()) {
+                                        $inner->orWhereIn('cod_empleado', $extraIds->all());
+                                    }
+                                });
+                            } else {
+                                $query->whereRaw('1 = 0');
                             }
                         }
                     )
@@ -124,7 +146,40 @@ class TareaForm
 
                 Select::make('supervisor_asignado')
                     ->label('Supervisor')
-                    ->relationship('supervisor', 'nombre_completo')
+                    ->relationship(
+                        'supervisor',
+                        'nombre_completo',
+                        modifyQueryUsing: function (Builder $query, Get $get) {
+                            $codProy = $get('cod_proy');
+
+                            if (! $codProy) {
+                                $query->whereRaw('1 = 0');
+                                return;
+                            }
+
+                            $project = Proyecto::query()
+                                ->where('cod_proy', $codProy)
+                                ->first(['responsable_proyecto', 'supervisor_obra']);
+                            $extraIds = collect([$project?->responsable_proyecto, $project?->supervisor_obra])
+                                ->filter()
+                                ->unique()
+                                ->values();
+
+                            $query->where(function (Builder $inner) use ($codProy, $extraIds) {
+                                $inner->whereHas('asignaciones', fn ($subQuery) => $subQuery
+                                    ->where('cod_proy', $codProy)
+                                    ->where(function ($statusQuery) {
+                                        $statusQuery
+                                            ->where('estado', 'activo')
+                                            ->orWhereNull('estado');
+                                    }));
+
+                                if ($extraIds->isNotEmpty()) {
+                                    $inner->orWhereIn('cod_empleado', $extraIds->all());
+                                }
+                            });
+                        }
+                    )
                     ->searchable()
                     ->preload(),
 
