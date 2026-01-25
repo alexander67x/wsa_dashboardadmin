@@ -22,7 +22,11 @@ class ClienteForm
                     ->label('Email address')
                     ->email(),
                 TextInput::make('telefono')
-                    ->tel(),
+                    ->tel()
+                    ->numeric()
+                    ->nullable()
+                    ->rule('min_digits:8')
+                    ->helperText('Mínimo 8 dígitos.'),
                 Textarea::make('direccion')
                     ->columnSpanFull(),
                 FileUpload::make('documentos')

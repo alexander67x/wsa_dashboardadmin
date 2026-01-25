@@ -20,6 +20,7 @@ use Illuminate\Session\Middleware\StartSession;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 use App\Filament\Resources\Proyectos\ProyectoResource;
+use App\Http\Middleware\EnsureNotSupervisor;
 
 class AdminPanelProvider extends PanelProvider
 {
@@ -64,12 +65,11 @@ class AdminPanelProvider extends PanelProvider
                         'headerToolbar' => [
                             'left' => 'prev,next today',
                             'center' => 'title',
-                            'right' => 'dayGridMonth,timeGridWeek,listWeek',
+                            'right' => 'dayGridMonth',
                         ],
                         'buttonText' => [
                             'today' => 'Hoy',
                             'month' => 'Mes',
-                            'week' => 'Semana',
                             'day' => 'Día',
                             'list' => 'Agenda',
                         ],
@@ -90,6 +90,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->authMiddleware([
                 Authenticate::class,
+                EnsureNotSupervisor::class,
             ])
             ->renderHook(
                 'panels::head.end',
