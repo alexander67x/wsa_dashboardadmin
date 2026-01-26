@@ -4,6 +4,7 @@ namespace App\Filament\Resources\SolicitudesMateriales;
 
 use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\SolicitudesMateriales\Pages\ListSolicitudes;
+use App\Filament\Resources\SolicitudesMateriales\Pages\TraceabilidadSolicitud;
 use App\Filament\Resources\SolicitudesMateriales\Pages\ViewSolicitud;
 use App\Filament\Resources\SolicitudesMateriales\RelationManagers\DeliveriesRelationManager;
 use App\Filament\Resources\SolicitudesMateriales\Schemas\SolicitudForm;
@@ -84,6 +85,7 @@ class SolicitudMaterialResource extends Resource
         return [
             'index' => ListSolicitudes::route('/'),
             'view' => ViewSolicitud::route('/{record}'),
+            'traceabilidad' => TraceabilidadSolicitud::route('/{record}/trazabilidad'),
         ];
     }
 

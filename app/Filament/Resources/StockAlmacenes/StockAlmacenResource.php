@@ -66,7 +66,7 @@ class StockAlmacenResource extends Resource
         }
 
         if ($user->empleado?->role?->slug === 'responsable_proyecto') {
-            $allowed = ProjectAccessService::allowedProjectIds($user);
+            $allowed = ProjectAccessService::allowedProjectIds($user, true);
             $query = static::getModel()::query();
 
             if ($allowed === null) {

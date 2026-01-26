@@ -4,10 +4,12 @@ namespace App\Filament\Resources\StockAlmacenes\Schemas;
 
 use App\Models\Almacen;
 use App\Models\Material;
+use App\Services\ProjectAccessService;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Schema;
+use Illuminate\Support\Facades\Auth;
 
 class StockAlmacenForm
 {
@@ -36,7 +38,30 @@ class StockAlmacenForm
 
                 Select::make('id_almacen')
                     ->label('Almacén')
-                    ->relationship('almacen', 'nombre', fn ($query) => $query->where('activo', true))
+                    ->relationship('almacen', 'nombre', function ($query) {
+                        $query->where('activo', true);
+
+                        $user = Auth::user();
+                        if (! $user) {
+                            return $query->whereRaw('1 = 0');
+                        }
+
+                        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                            $allowed = ProjectAccessService::allowedProjectIds($user, true);
+
+                            if ($allowed === null) {
+                                return $query;
+                            }
+
+                            if (empty($allowed)) {
+                                return $query->whereRaw('1 = 0');
+                            }
+
+                            return $query->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $query;
+                    })
                     ->searchable()
                     ->preload()
                     ->required()
@@ -87,4 +112,3 @@ class StockAlmacenForm
             ]);
     }
 }
-

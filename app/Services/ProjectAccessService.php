@@ -11,13 +11,13 @@ class ProjectAccessService
     /**
      * @return array<string>|null Returns null when user can access all projects, array when limited, empty array for none.
      */
-    public static function allowedProjectIds(?User $user): ?array
+    public static function allowedProjectIds(?User $user, bool $ignorePermission = false): ?array
     {
         if (! $user || ! $user->empleado) {
             return [];
         }
 
-        if ($user->hasPermission('dashboard.projects.overview')) {
+        if (! $ignorePermission && $user->hasPermission('dashboard.projects.overview')) {
             return null;
         }
 

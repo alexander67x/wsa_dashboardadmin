@@ -144,13 +144,13 @@ class SeguimientoCalendarWidget extends FullCalendarWidget
             'headerToolbar' => [
                 'left' => 'prev,next today',
                 'center' => 'title',
-                'right' => 'dayGridMonth',
+                'right' => 'dayGridMonth,listWeek',
             ],
             'buttonText' => [
                 'today' => 'Hoy',
                 'month' => 'Mes',
                 'day' => 'Día',
-                'list' => 'Agenda',
+                'listWeek' => 'Agenda',
             ],
         ];
     }

@@ -707,15 +707,20 @@ class MaterialController extends Controller
 				// Disminuir stock en almacén origen
 				$stockOrigen->decrement('cantidad_disponible', $delivery['quantity']);
 
-				// Aumentar stock en almacén destino
-				$stockDestino = \App\Models\StockAlmacen::where('id_almacen', $almacenDestino->id_almacen)
-					->where('id_material', $item->id_material)
-					->when($loteDestinoId, function ($query) use ($loteDestinoId) {
+				// Aumentar stock en almacén destino (proyectos no manejan lotes)
+				$destinoUsaLote = $almacenDestino->tipo === 'central';
+				$stockDestinoQuery = \App\Models\StockAlmacen::where('id_almacen', $almacenDestino->id_almacen)
+					->where('id_material', $item->id_material);
+
+				if ($destinoUsaLote) {
+					$stockDestinoQuery->when($loteDestinoId, function ($query) use ($loteDestinoId) {
 						return $query->where('id_lote', $loteDestinoId);
 					}, function ($query) {
 						return $query->whereNull('id_lote');
-					})
-					->first();
+					});
+				}
+
+				$stockDestino = $stockDestinoQuery->first();
 
 				if ($stockDestino) {
 					$stockDestino->increment('cantidad_disponible', $delivery['quantity']);
@@ -724,7 +729,7 @@ class MaterialController extends Controller
 					\App\Models\StockAlmacen::create([
 						'id_almacen' => $almacenDestino->id_almacen,
 						'id_material' => $item->id_material,
-						'id_lote' => $loteDestinoId,
+						'id_lote' => $destinoUsaLote ? $loteDestinoId : null,
 						'cantidad_disponible' => $delivery['quantity'],
 						'cantidad_reservada' => 0,
 						'cantidad_minima_alerta' => $item->material->stock_minimo ?? 0,
@@ -754,10 +759,10 @@ class MaterialController extends Controller
 					'motivo_parcial' => $motivoParcial,
 					'fecha_entrega' => now(),
 					'entregado_por' => $empleado->cod_empleado,
-					'recibido_por' => null, // Se actualizará cuando se reciba
+					'recibido_por' => $empleado->cod_empleado,
 					'observaciones' => $observacionesEntrega,
-					'estado' => 'en_transito',
-					'fecha_recepcion' => null,
+					'estado' => 'recibido',
+					'fecha_recepcion' => now(),
 					'foto_recepcion_url' => $fotoEntregaUrl,
 				]);
 

@@ -75,7 +75,8 @@ class AlmacenForm
 
                 Select::make('responsable')
                     ->label('Responsable')
-                    ->options(fn () => Empleado::orderBy('nombre_completo')
+                    ->options(fn () => Empleado::whereHas('role', fn ($query) => $query->where('slug', 'responsable_proyecto'))
+                        ->orderBy('nombre_completo')
                         ->pluck('nombre_completo', 'cod_empleado')
                         ->toArray())
                     ->searchable()

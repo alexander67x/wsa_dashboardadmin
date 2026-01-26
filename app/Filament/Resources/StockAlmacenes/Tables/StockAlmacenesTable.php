@@ -27,7 +27,7 @@ class StockAlmacenesTable
                 }
 
                 if ($user->empleado?->role?->slug === 'responsable_proyecto') {
-                    $allowed = ProjectAccessService::allowedProjectIds($user);
+                    $allowed = ProjectAccessService::allowedProjectIds($user, true);
 
                     if ($allowed === null) {
                         return $query;
@@ -148,7 +148,7 @@ class StockAlmacenesTable
                         }
 
                         if ($user->empleado?->role?->slug === 'responsable_proyecto') {
-                            $allowed = ProjectAccessService::allowedProjectIds($user);
+                            $allowed = ProjectAccessService::allowedProjectIds($user, true);
 
                             if ($allowed === null) {
                                 return $almacenQuery;

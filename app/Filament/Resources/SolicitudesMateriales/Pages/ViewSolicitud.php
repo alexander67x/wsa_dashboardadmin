@@ -37,6 +37,11 @@ class ViewSolicitud extends ViewRecord
         $userRole = Auth::user()?->empleado?->role?->slug;
         $canApprove = Auth::user()?->hasPermission('materials.requests.approve') ?? false;
 
+        $actions[] = Action::make('ver_trazabilidad')
+            ->label('Ver trazabilidad')
+            ->icon('heroicon-o-arrow-path')
+            ->url(SolicitudMaterialResource::getUrl('traceabilidad', ['record' => $this->record]));
+
         // Solo mostrar acciones de aprobar/rechazar si la solicitud está pendiente o en borrador
         if ($canApprove && in_array($this->record->estado, ['borrador', 'pendiente'])) {
             // Cargar items para verificar si requiere compra
@@ -447,12 +452,21 @@ class ViewSolicitud extends ViewRecord
         try {
             DB::beginTransaction();
 
+            $user = Auth::user();
+            $empleado = $user ? Empleado::where('email', $user->email)->first() : null;
+
             $this->record->update([
                 'estado' => 'enviado',
                 'observaciones' => $observaciones
                     ? ($this->record->observaciones ? $this->record->observaciones . "\n\nDespacho: " . $observaciones : "Despacho: " . $observaciones)
                     : $this->record->observaciones,
             ]);
+
+            $this->record->deliveries()
+                ->where('estado', '!=', 'recibido')
+                ->update([
+                    'estado' => 'en_transito',
+                ]);
 
             $this->registrarEventoHistorial('enviado', $observaciones);
 
