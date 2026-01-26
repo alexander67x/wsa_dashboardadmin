@@ -130,6 +130,33 @@ class SolicitudesMaterialesTable
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
+                SelectFilter::make('cod_proy')
+                    ->label('Proyecto')
+                    ->relationship('proyecto', 'nombre_ubicacion', function ($query) {
+                        $user = Auth::user();
+                        if (! $user) {
+                            return $query->whereRaw('1 = 0');
+                        }
+
+                        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+                            $allowed = ProjectAccessService::allowedProjectIds($user);
+
+                            if ($allowed === null) {
+                                return $query;
+                            }
+
+                            if (empty($allowed)) {
+                                return $query->whereRaw('1 = 0');
+                            }
+
+                            return $query->whereIn('cod_proy', $allowed);
+                        }
+
+                        return $query;
+                    })
+                    ->searchable()
+                    ->preload(),
+
                 SelectFilter::make('estado')
                     ->label('Estado')
                     ->options([
