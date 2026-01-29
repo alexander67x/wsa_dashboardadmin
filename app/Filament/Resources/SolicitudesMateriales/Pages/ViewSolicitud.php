@@ -3,8 +3,10 @@
 namespace App\Filament\Resources\SolicitudesMateriales\Pages;
 
 use App\Filament\Resources\SolicitudesMateriales\SolicitudMaterialResource;
+use App\Models\Almacen;
 use App\Models\Empleado;
 use App\Models\SolicitudHistorial;
+use App\Models\StockAlmacen;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -452,8 +454,108 @@ class ViewSolicitud extends ViewRecord
         try {
             DB::beginTransaction();
 
+            if ($this->record->estado !== 'aprobada') {
+                Notification::make()
+                    ->title('Estado inválido')
+                    ->body('Solo se puede despachar una solicitud cuando está aprobada.')
+                    ->danger()
+                    ->send();
+                DB::rollBack();
+                return;
+            }
+
             $user = Auth::user();
             $empleado = $user ? Empleado::where('email', $user->email)->first() : null;
+
+            if (! $empleado) {
+                Notification::make()
+                    ->title('Error')
+                    ->body('No se encontró un empleado asociado a tu usuario.')
+                    ->danger()
+                    ->send();
+                DB::rollBack();
+                return;
+            }
+
+            $this->record->loadMissing(['items.material', 'proyecto']);
+
+            $almacenDestino = Almacen::where('cod_proy', $this->record->cod_proy)
+                ->where('activo', true)
+                ->first();
+
+            $almacenOrigen = null;
+            if ($almacenDestino?->id_almacen_padre) {
+                $almacenOrigen = Almacen::where('id_almacen', $almacenDestino->id_almacen_padre)
+                    ->where('activo', true)
+                    ->first();
+            }
+
+            if (! $almacenOrigen) {
+                Notification::make()
+                    ->title('Error')
+                    ->body('No se encontró un almacén origen (almacén padre) para realizar el despacho.')
+                    ->danger()
+                    ->send();
+                DB::rollBack();
+                return;
+            }
+
+            if (! $this->record->items || $this->record->items->isEmpty()) {
+                Notification::make()
+                    ->title('Error')
+                    ->body('La solicitud no tiene materiales asociados.')
+                    ->danger()
+                    ->send();
+                DB::rollBack();
+                return;
+            }
+
+            $requiereCompra = (bool) $this->record->requiere_compra;
+
+            foreach ($this->record->items as $item) {
+                $cantidadADescontar = $item->cantidad_aprobada ?? $item->cantidad_solicitada ?? 0;
+
+                if ($cantidadADescontar <= 0) {
+                    continue;
+                }
+
+                $stockRows = StockAlmacen::where('id_almacen', $almacenOrigen->id_almacen)
+                    ->where('id_material', $item->id_material)
+                    ->orderByDesc('cantidad_disponible')
+                    ->lockForUpdate()
+                    ->get();
+
+                $disponibleTotal = $stockRows->sum(function ($row) {
+                    return max(0, (float) $row->cantidad_disponible - (float) $row->cantidad_reservada);
+                });
+
+                if ($disponibleTotal <= 0) {
+                    continue;
+                }
+
+                if (! $requiereCompra && $disponibleTotal < $cantidadADescontar) {
+                    $materialNombre = $item->material?->nombre_producto ?? 'material';
+                    throw new \Exception("No hay stock suficiente en el almacén padre para {$materialNombre}. Disponible: {$disponibleTotal}");
+                }
+
+                $restante = $requiereCompra
+                    ? min($cantidadADescontar, $disponibleTotal)
+                    : $cantidadADescontar;
+                foreach ($stockRows as $stockRow) {
+                    if ($restante <= 0) {
+                        break;
+                    }
+
+                    $disponible = max(0, (float) $stockRow->cantidad_disponible - (float) $stockRow->cantidad_reservada);
+                    if ($disponible <= 0) {
+                        continue;
+                    }
+
+                    $descontar = min($restante, $disponible);
+                    $stockRow->decrement('cantidad_disponible', $descontar);
+                    $restante -= $descontar;
+                }
+            }
 
             $this->record->update([
                 'estado' => 'enviado',

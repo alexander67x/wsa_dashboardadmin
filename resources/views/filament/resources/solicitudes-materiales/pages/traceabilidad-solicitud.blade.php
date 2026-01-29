@@ -25,6 +25,7 @@
 
     $tieneCompra = $record->requiere_compra ?? false;
     $tieneDespachos = $deliveries->isNotEmpty();
+    $estadoDespacho = in_array($record->estado ?? '', ['enviado', 'recibida'], true);
     $tieneRecepciones = $receipts->isNotEmpty();
 
     $materialNames = $items->mapWithKeys(function ($item) {
@@ -40,37 +41,43 @@
         })
         ->values();
 
-    $detalleDespacho = $tieneDespachos
-        ? $deliveries
-            ->groupBy('id_material')
-            ->map(function ($group, $materialId) use ($materialNames) {
-                $nombre = $materialNames[$materialId] ?? "Material ID: {$materialId}";
-                $cantidad = number_format((float) $group->sum('cantidad_entregada'), 2);
-                return "{$nombre} ({$cantidad})";
-            })
-            ->values()
-        : $items
-            ->map(function ($item) use ($materialNames) {
-                $nombre = $materialNames[$item->id_material] ?? "Material ID: {$item->id_material}";
-                $cantidadBase = $item->cantidad_aprobada ?? $item->cantidad_solicitada;
-                $cantidad = number_format((float) $cantidadBase, 2);
-                return "{$nombre} ({$cantidad})";
-            })
-            ->values();
+    $detalleDespacho = $estadoDespacho
+        ? ($tieneDespachos
+            ? $deliveries
+                ->groupBy('id_material')
+                ->map(function ($group, $materialId) use ($materialNames) {
+                    $nombre = $materialNames[$materialId] ?? "Material ID: {$materialId}";
+                    $cantidad = number_format((float) $group->sum('cantidad_entregada'), 2);
+                    return "{$nombre} ({$cantidad})";
+                })
+                ->values()
+            : $items
+                ->map(function ($item) use ($materialNames) {
+                    $nombre = $materialNames[$item->id_material] ?? "Material ID: {$item->id_material}";
+                    $cantidadBase = $item->cantidad_aprobada ?? $item->cantidad_solicitada;
+                    $cantidad = number_format((float) $cantidadBase, 2);
+                    return "{$nombre} ({$cantidad})";
+                })
+                ->values())
+        : collect();
 
-    $cantidadDespacho = $tieneDespachos
-        ? $totalEntregado
-        : $items->sum(function ($item) {
-            return (float) ($item->cantidad_aprobada ?? $item->cantidad_solicitada ?? 0);
-        });
+    $cantidadDespacho = $estadoDespacho
+        ? ($tieneDespachos
+            ? $totalEntregado
+            : $items->sum(function ($item) {
+                return (float) ($item->cantidad_aprobada ?? $item->cantidad_solicitada ?? 0);
+            }))
+        : 0;
 
-    $almacenOrigenTexto = $tieneDespachos
-        ? ($almacenesOrigen->implode(', ') ?: 'N/D')
-        : ($almacenOrigenFallback?->nombre ?? 'N/D');
+    $almacenOrigenTexto = $estadoDespacho
+        ? ($tieneDespachos ? ($almacenesOrigen->implode(', ') ?: 'N/D') : ($almacenOrigenFallback?->nombre ?? 'N/D'))
+        : 'N/D';
 
-    $fechaDespacho = $tieneDespachos
-        ? ($ultimoDespacho?->format('d/m/Y H:i') ?? $eventoDespacho?->fecha_evento?->format('d/m/Y H:i'))
-        : ($eventoEnviado?->fecha_evento?->format('d/m/Y H:i') ?? $record->updated_at?->format('d/m/Y H:i'));
+    $fechaDespacho = $estadoDespacho
+        ? ($tieneDespachos
+            ? ($ultimoDespacho?->format('d/m/Y H:i') ?? $eventoDespacho?->fecha_evento?->format('d/m/Y H:i'))
+            : ($eventoEnviado?->fecha_evento?->format('d/m/Y H:i') ?? $record->updated_at?->format('d/m/Y H:i')))
+        : 'N/D';
 
     $detalleRecepcion = $receipts
         ->groupBy('id_material')
@@ -190,7 +197,6 @@
                     <div><span>Almacén origen</span><strong>{{ $almacenOrigenTexto }}</strong></div>
                     <div><span>Fecha</span><strong>{{ $fechaDespacho ?? 'N/D' }}</strong></div>
                     <div><span>Compra requerida</span><strong>{{ $tieneCompra ? 'Sí' : 'No' }}</strong></div>
-                    <div><span>Fecha compra</span><strong>{{ $eventoCompra?->fecha_evento?->format('d/m/Y H:i') ?? 'N/D' }}</strong></div>
                 </div>
             </div>
 

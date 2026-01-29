@@ -679,7 +679,7 @@ class MaterialController extends Controller
 					$lotesCreados[] = $lote;
 				}
 
-				// Verificar stock disponible en almacén origen
+				// Obtener lote de origen (si existe) para registrar movimiento
 				$lotIdFromPayload = $delivery['lotId'] ?? null;
 
 				$stockOrigenQuery = \App\Models\StockAlmacen::where('id_almacen', $almacenOrigen->id_almacen)
@@ -691,10 +691,8 @@ class MaterialController extends Controller
 
 				$stockOrigen = $stockOrigenQuery->first();
 
-				$disponible = $stockOrigen ? ($stockOrigen->cantidad_disponible - $stockOrigen->cantidad_reservada) : 0;
-
-				if (!$stockOrigen || $disponible < $delivery['quantity']) {
-					throw new \Exception("No hay stock suficiente en el almacén origen para el material {$item->material->nombre_producto}. Disponible: " . $disponible);
+				if (!$stockOrigen) {
+					throw new \Exception("No se encontró stock en el almacén origen para el material {$item->material->nombre_producto}.");
 				}
 
 				$origenLoteId = $stockOrigen->id_lote;
@@ -703,9 +701,6 @@ class MaterialController extends Controller
 				if (!$loteDestinoId) {
 					$loteDestinoId = $origenLoteId;
 				}
-
-				// Disminuir stock en almacén origen
-				$stockOrigen->decrement('cantidad_disponible', $delivery['quantity']);
 
 				// Aumentar stock en almacén destino (proyectos no manejan lotes)
 				$destinoUsaLote = $almacenDestino->tipo === 'central';
