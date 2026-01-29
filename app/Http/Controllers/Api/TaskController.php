@@ -69,6 +69,9 @@ class TaskController extends Controller
                     'responsibleIds' => collect($responsibles)->pluck('id')->all(),
                     'responsibles' => $responsibles,
                     'responsible' => $primaryResponsible,
+                    'assignee' => $primaryResponsible['name'] ?? null,
+                    'assigneeIds' => collect($responsibles)->pluck('id')->all(),
+                    'assignees' => collect($responsibles)->pluck('name')->all(),
                     'createdAt' => optional($tarea->created_at)->toDateTimeString(),
                 ];
             });
@@ -133,6 +136,9 @@ class TaskController extends Controller
             'responsibleIds' => collect($responsibles)->pluck('id')->all(),
             'responsibles' => $responsibles,
             'responsible' => $primaryResponsible,
+            'assignee' => $primaryResponsible['name'] ?? null,
+            'assigneeIds' => collect($responsibles)->pluck('id')->all(),
+            'assignees' => collect($responsibles)->pluck('name')->all(),
             'supervisorId' => $tarea->supervisor_asignado ? (string) $tarea->supervisor_asignado : null,
             'supervisor' => $tarea->supervisor ? [
                 'id' => (string) $tarea->supervisor->cod_empleado,
@@ -247,6 +253,9 @@ class TaskController extends Controller
                 'responsibleIds' => collect($responsibles)->pluck('id')->all(),
                 'responsibles' => $responsibles,
                 'responsible' => $responsibles[0] ?? null,
+                'assignee' => $responsibles[0]['name'] ?? null,
+                'assigneeIds' => collect($responsibles)->pluck('id')->all(),
+                'assignees' => collect($responsibles)->pluck('name')->all(),
             ]
         ], 200);
     }
@@ -263,4 +272,3 @@ class TaskController extends Controller
             ->all();
     }
 }
-

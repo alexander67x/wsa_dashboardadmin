@@ -73,7 +73,7 @@ class ProjectController extends Controller
                     'updated_at',
                     'supervisor_asignado',
                 ])->with([
-                    'responsables:cod_empleado,nombre_completo',
+                    'responsables:cod_empleado,nombre_completo,cargo',
                     'supervisor:cod_empleado,nombre_completo',
                 ]);
             },
@@ -99,9 +99,16 @@ class ProjectController extends Controller
                 ->values(),
             'tasks' => $project->tareas
                 ->map(function ($task) {
-                    $primaryResponsible = $task->responsables->first();
-                    $responsableNombre = $primaryResponsible?->nombre_completo
-                        ?? $task->supervisor?->nombre_completo;
+                    $responsibles = $task->responsables
+                        ->map(fn ($empleado) => [
+                            'id' => (string) $empleado->cod_empleado,
+                            'name' => $empleado->nombre_completo,
+                            'position' => $empleado->cargo,
+                        ])
+                        ->values()
+                        ->all();
+                    $primaryResponsible = $responsibles[0] ?? null;
+                    $responsableNombre = $primaryResponsible['name'] ?? $task->supervisor?->nombre_completo;
 
                     return [
                         // IDs
@@ -119,6 +126,14 @@ class ProjectController extends Controller
                         'responsableName' => $responsableNombre,
                         'encargado' => $responsableNombre,
                         'owner' => $responsableNombre,
+                        'responsibleId' => $primaryResponsible['id'] ?? null,
+                        'responsibleName' => $primaryResponsible['name'] ?? null,
+                        'responsibleIds' => collect($responsibles)->pluck('id')->all(),
+                        'responsibles' => $responsibles,
+                        'responsible' => $primaryResponsible,
+                        'assignee' => $primaryResponsible['name'] ?? null,
+                        'assigneeIds' => collect($responsibles)->pluck('id')->all(),
+                        'assignees' => collect($responsibles)->pluck('name')->all(),
                         // Fechas
                         'startDate' => optional($task->fecha_inicio)->toDateString(),
                         'fechaInicio' => optional($task->fecha_inicio)->toDateString(),
