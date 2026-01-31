@@ -58,6 +58,7 @@ class IncidenciasTable
                 TextColumn::make('tipo_incidencia')
                     ->label('Tipo')
                     ->badge()
+                    ->getStateUsing(fn ($record) => $record?->tipo_incidencia)
                     ->color(fn (?string $tipo): string => match ($tipo) {
                         null => 'gray',
                         'accidente' => 'danger',
@@ -66,17 +67,24 @@ class IncidenciasTable
                         'problema_calidad' => 'warning',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (?string $tipo): string => match ($tipo) {
-                        null => '—',
-                        'falla_equipos' => 'Falla Equipos',
-                        'retraso_material' => 'Retraso Material',
-                        'problema_calidad' => 'Problema Calidad',
-                        default => ucfirst(str_replace('_', ' ', $tipo)),
+                    ->formatStateUsing(function ($state): string {
+                        $tipo = is_string($state) ? trim($state) : $state;
+                        if (! $tipo) {
+                            return '—';
+                        }
+
+                        return match ($tipo) {
+                            'falla_equipos' => 'Falla Equipos',
+                            'retraso_material' => 'Retraso Material',
+                            'problema_calidad' => 'Problema Calidad',
+                            default => ucfirst(str_replace('_', ' ', $tipo)),
+                        };
                     }),
                 
                 TextColumn::make('severidad')
                     ->label('Severidad')
                     ->badge()
+                    ->getStateUsing(fn ($record) => $record?->severidad)
                     ->color(fn (?string $severidad): string => match ($severidad) {
                         null => 'gray',
                         'critica' => 'danger',
@@ -85,7 +93,10 @@ class IncidenciasTable
                         'baja' => 'success',
                         default => 'gray',
                     })
-                    ->formatStateUsing(fn (?string $severidad): string => $severidad ? ucfirst($severidad) : '—'),
+                    ->formatStateUsing(function ($state): string {
+                        $severidad = is_string($state) ? trim($state) : $state;
+                        return $severidad ? ucfirst($severidad) : '—';
+                    }),
                 
                 TextColumn::make('estado')
                     ->label('Estado')

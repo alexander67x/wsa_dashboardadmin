@@ -112,27 +112,15 @@ class TareaForm
                             $codProy = $get('cod_proy');
 
                             if ($codProy) {
-                                $project = Proyecto::query()
-                                    ->where('cod_proy', $codProy)
-                                    ->first(['responsable_proyecto', 'supervisor_obra']);
-                                $extraIds = collect([$project?->responsable_proyecto, $project?->supervisor_obra])
-                                    ->filter()
-                                    ->unique()
-                                    ->values();
-
-                                $query->where(function (Builder $inner) use ($codProy, $extraIds) {
-                                    $inner->whereHas('asignaciones', fn ($subQuery) => $subQuery
+                                $query
+                                    ->whereHas('role', fn ($roleQuery) => $roleQuery->where('slug', 'personal_obra'))
+                                    ->whereHas('asignaciones', fn ($subQuery) => $subQuery
                                         ->where('cod_proy', $codProy)
                                         ->where(function ($statusQuery) {
                                             $statusQuery
                                                 ->where('estado', 'activo')
                                                 ->orWhereNull('estado');
                                         }));
-
-                                    if ($extraIds->isNotEmpty()) {
-                                        $inner->orWhereIn('cod_empleado', $extraIds->all());
-                                    }
-                                });
                             } else {
                                 $query->whereRaw('1 = 0');
                             }

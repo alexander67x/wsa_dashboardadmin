@@ -54,6 +54,7 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\Filament\Widgets')
             ->widgets([
                 AccountWidget::class,
+                \App\Filament\Widgets\AttendanceWeeklyAverageChart::class,
                 \App\Filament\Widgets\LeadTimeByRoleChart::class,
                 \App\Filament\Widgets\EmployeeProductivityChart::class,
             ])

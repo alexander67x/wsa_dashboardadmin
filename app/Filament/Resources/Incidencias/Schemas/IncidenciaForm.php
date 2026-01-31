@@ -47,19 +47,32 @@ class IncidenciaForm
                     ->label('Tipo de Incidencia')
                     ->disabled()
                     ->dehydrated(false)
-                    ->formatStateUsing(fn (?string $tipo): string => match ($tipo) {
-                        null => '—',
-                        'falla_equipos' => 'Falla Equipos',
-                        'retraso_material' => 'Retraso Material',
-                        'problema_calidad' => 'Problema Calidad',
-                        default => ucfirst(str_replace('_', ' ', $tipo)),
+                    ->formatStateUsing(function ($state, $record): string {
+                        $tipo = $record?->tipo_incidencia ?? $state;
+                        $tipo = is_string($tipo) ? trim($tipo) : $tipo;
+
+                        if (! $tipo) {
+                            return '—';
+                        }
+
+                        return match ($tipo) {
+                            'falla_equipos' => 'Falla Equipos',
+                            'retraso_material' => 'Retraso Material',
+                            'problema_calidad' => 'Problema Calidad',
+                            default => ucfirst(str_replace('_', ' ', $tipo)),
+                        };
                     }),
                 
                 TextInput::make('severidad')
                     ->label('Severidad')
                     ->disabled()
                     ->dehydrated(false)
-                    ->formatStateUsing(fn (?string $severidad): string => $severidad ? ucfirst($severidad) : '—'),
+                    ->formatStateUsing(function ($state, $record): string {
+                        $severidad = $record?->severidad ?? $state;
+                        $severidad = is_string($severidad) ? trim($severidad) : $severidad;
+
+                        return $severidad ? ucfirst($severidad) : '—';
+                    }),
                 
                 TextInput::make('estado')
                     ->label('Estado')

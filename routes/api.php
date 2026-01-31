@@ -30,7 +30,7 @@ Route::middleware('auth:sanctum')->group(function () {
 	Route::get('/projects/{id}/team', [ProjectController::class, 'team'])
 		->middleware('permission:projects.detail.view,projects.my.view');
 	Route::get('/projects/{id}/stock', [ProjectController::class, 'stock'])
-		->middleware('permission:inventory.view.project,inventory.view.central');
+		->middleware('permission:inventory.view.project,inventory.view.project.stock,inventory.view.central');
 
 	// Reports
 	Route::get('/reports', [ReportController::class, 'index'])

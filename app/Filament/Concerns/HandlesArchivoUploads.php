@@ -87,6 +87,7 @@ trait HandlesArchivoUploads
             $localUrl = $this->resolveLocalUrl($storage, $path);
             $mimeType = $storage->mimeType($path) ?: null;
             $fileSize = $storage->size($path) ?: null;
+            $resourceType = ($mimeType && str_starts_with($mimeType, 'image/')) ? 'image' : 'raw';
 
             $uploadData = null;
             $uploadedToCloud = false;
@@ -95,7 +96,7 @@ trait HandlesArchivoUploads
                 try {
                     $uploadData = Cloudinary::uploadApi()->upload($localPath, [
                         'folder' => $folder,
-                        'resource_type' => 'auto',
+                        'resource_type' => $resourceType,
                     ]);
                     $uploadedToCloud = true;
                 } catch (Throwable $exception) {
@@ -112,7 +113,7 @@ trait HandlesArchivoUploads
             $url = $uploadData['secure_url'] ?? $uploadData['url'] ?? $localUrl;
             $filename = $uploadData['original_filename']
                 ?? basename(parse_url($url ?? $path, PHP_URL_PATH) ?: $path);
-            $mime = $uploadData['resource_type'] ?? $mimeType;
+            $mime = $mimeType ?? ($uploadData['resource_type'] ?? null);
             $bytes = $uploadData['bytes'] ?? $fileSize;
 
             if ($creadoPor === null) {

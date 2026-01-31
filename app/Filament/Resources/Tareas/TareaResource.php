@@ -31,6 +31,13 @@ class TareaResource extends Resource
 
     protected static ?int $navigationSort = 5;
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+
+        return $user?->empleado?->role?->slug !== 'adquisiciones';
+    }
+
     public static function form(Schema $schema): Schema
     {
         return TareaForm::configure($schema);

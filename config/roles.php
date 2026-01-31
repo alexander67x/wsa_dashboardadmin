@@ -10,6 +10,10 @@ return [
             'label' => 'Consultar inventario de proyectos y subalmacenes',
             'module' => 'inventario',
         ],
+        'inventory.view.project.stock' => [
+            'label' => 'Consultar stock de proyecto',
+            'module' => 'inventario',
+        ],
         'inventory.view.subwarehouses' => [
             'label' => 'Visualizar subalmacenes y frentes de obra',
             'module' => 'inventario',
@@ -264,6 +268,7 @@ return [
                 'mobile.incidents.report',
                 'reports.create',
                 'incidents.create',
+                'inventory.view.project.stock',
             ],
         ],
     ],

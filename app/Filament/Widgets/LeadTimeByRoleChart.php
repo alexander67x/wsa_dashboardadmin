@@ -10,9 +10,9 @@ class LeadTimeByRoleChart extends ChartWidget
 {
     protected static ?int $sort = 25;
 
-    protected ?string $heading = 'Lead time medio por proyecto (tareas vs incidencias)';
+    protected ?string $heading = 'Lead time medio por proyecto (tareas)';
 
-    protected string $color = 'warning';
+    protected string $color = 'info';
 
     protected int | string | array $columnSpan = 'full';
 
@@ -45,21 +45,12 @@ class LeadTimeByRoleChart extends ChartWidget
             ->map(fn ($v) => $v !== null ? round((float) $v, 2) : null)
             ->all();
 
-        $incidentData = $rows
-            ->pluck('lead_time_incidencias_dias')
-            ->map(fn ($v) => $v !== null ? round((float) $v, 2) : null)
-            ->all();
-
         return [
             'labels' => $labels,
             'datasets' => [
                 [
                     'label' => 'Lead time tareas (días)',
                     'data' => $taskData,
-                ],
-                [
-                    'label' => 'Lead time incidencias (días)',
-                    'data' => $incidentData,
                 ],
             ],
         ];

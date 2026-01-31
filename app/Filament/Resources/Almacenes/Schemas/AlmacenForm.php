@@ -67,6 +67,20 @@ class AlmacenForm
                     ->relationship('proyecto', 'cod_proy')
                     ->searchable()
                     ->preload()
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, $state) {
+                        if (! $state) {
+                            $set('responsable', null);
+
+                            return;
+                        }
+
+                        $responsableId = Proyecto::query()
+                            ->where('cod_proy', $state)
+                            ->value('responsable_proyecto');
+
+                        $set('responsable', $responsableId ?: null);
+                    })
                     ->getOptionLabelFromRecordUsing(fn (Proyecto $record): string => "{$record->cod_proy} - {$record->nombre_ubicacion}")
                     ->visible(fn (Get $get) => $get('tipo') === 'proyecto')
                     ->required(fn (Get $get) => $get('tipo') === 'proyecto')

@@ -107,10 +107,21 @@
     $numeroReporte = $reportePrincipal?->id_reporte
         ? 'REP-' . str_pad((string) $reportePrincipal->id_reporte, 3, '0', STR_PAD_LEFT)
         : 'N/D';
-    $detalleUsoObra = ($reportePrincipal?->materiales ?? collect())
-        ->map(function ($material) {
-            $nombre = $material->material?->nombre_producto ?? "Material ID: {$material->id_material}";
-            $cantidad = number_format((float) $material->cantidad_usada, 2);
+    $detalleUsoObra = $reportesUso
+        ->flatMap(function ($reporte) {
+            return ($reporte->materiales ?? collect())->map(function ($material) {
+                $nombre = $material->material?->nombre_producto ?? "Material ID: {$material->id_material}";
+                return [
+                    'id' => $material->id_material,
+                    'nombre' => $nombre,
+                    'cantidad' => (float) $material->cantidad_usada,
+                ];
+            });
+        })
+        ->groupBy('id')
+        ->map(function ($items) {
+            $nombre = $items->first()['nombre'] ?? 'Material';
+            $cantidad = number_format($items->sum('cantidad'), 2);
             return "{$nombre} ({$cantidad})";
         })
         ->values();

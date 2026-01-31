@@ -24,7 +24,8 @@ RUN apk add --no-cache \
     zlib-dev \
     mariadb-connector-c-dev \
     nginx \
-    supervisor
+    supervisor \
+    tzdata
 
 RUN docker-php-ext-configure gd --with-freetype --with-jpeg --with-webp \
     && docker-php-ext-install pdo pdo_mysql intl mbstring zip gd opcache
@@ -60,7 +61,11 @@ ENV APP_ENV=production \
     DB_PORT=3306 \
     DB_DATABASE=app \
     DB_USERNAME=app \
-    DB_PASSWORD=secret
+    DB_PASSWORD=secret \
+    TZ=America/La_Paz
+
+RUN ln -snf /usr/share/zoneinfo/America/La_Paz /etc/localtime \
+    && echo "America/La_Paz" > /etc/timezone
 
 EXPOSE 80
 

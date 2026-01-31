@@ -15,6 +15,7 @@ use Filament\Forms\Components\CheckboxList;
 use Filament\Schemas\Components\Utilities\Get;
 use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
+use Illuminate\Database\Eloquent\Builder;
 
 class ProyectoForm
 {
@@ -125,7 +126,14 @@ class ProyectoForm
 
                 Select::make('responsable_proyecto')
                     ->label('Responsable del Proyecto')
-                    ->relationship('responsable', 'nombre_completo')
+                    ->relationship(
+                        'responsable',
+                        'nombre_completo',
+                        fn (Builder $query) => $query->whereHas(
+                            'role',
+                            fn (Builder $roleQuery) => $roleQuery->where('slug', 'responsable_proyecto')
+                        )
+                    )
                     ->searchable()
                     ->preload()
                     ->required()
@@ -133,7 +141,14 @@ class ProyectoForm
 
                 Select::make('supervisor_obra')
                     ->label('Supervisor de Obra')
-                    ->relationship('supervisor', 'nombre_completo')
+                    ->relationship(
+                        'supervisor',
+                        'nombre_completo',
+                        fn (Builder $query) => $query->whereHas(
+                            'role',
+                            fn (Builder $roleQuery) => $roleQuery->where('slug', 'supervisor_obra')
+                        )
+                    )
                     ->searchable()
                     ->preload()
                     ->extraAttributes(['class' => 'dropup-select']),

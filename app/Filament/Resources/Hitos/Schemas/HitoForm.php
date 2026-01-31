@@ -11,6 +11,7 @@ use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Toggle;
 use Filament\Schemas\Components\Utilities\Get;
+use Filament\Schemas\Components\Utilities\Set;
 use Filament\Schemas\Schema;
 
 class HitoForm
@@ -30,7 +31,20 @@ class HitoForm
                     ->searchable()
                     ->preload()
                     ->required()
-                    ->reactive(),
+                    ->live()
+                    ->afterStateUpdated(function (Set $set, $state) {
+                        if (! $state) {
+                            $set('creado_por', null);
+
+                            return;
+                        }
+
+                        $responsableId = Proyecto::query()
+                            ->where('cod_proy', $state)
+                            ->value('responsable_proyecto');
+
+                        $set('creado_por', $responsableId ?: null);
+                    }),
 
                 Select::make('id_fase')
                     ->label('Fase')
