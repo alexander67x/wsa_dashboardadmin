@@ -108,13 +108,41 @@ class HitoForm
 
                 Select::make('creado_por')
                     ->label('Responsable')
-                    ->options(fn () => Empleado::query()
+                    ->options(fn (Get $get) => Empleado::query()
+                        ->when(
+                            $get('cod_proy'),
+                            function ($query, $codProy) {
+                                $responsableId = Proyecto::query()
+                                    ->where('cod_proy', $codProy)
+                                    ->value('responsable_proyecto');
+
+                                $query
+                                    ->whereHas('role', fn ($roleQuery) => $roleQuery->where('slug', 'responsable_proyecto'))
+                                    ->where(function ($inner) use ($codProy, $responsableId) {
+                                        $inner->whereHas('asignaciones', fn ($subQuery) => $subQuery
+                                            ->where('cod_proy', $codProy)
+                                            ->where(function ($statusQuery) {
+                                                $statusQuery
+                                                    ->where('estado', 'activo')
+                                                    ->orWhereNull('estado');
+                                            }));
+
+                                        if ($responsableId) {
+                                            $inner->orWhere('cod_empleado', $responsableId);
+                                        }
+                                    });
+                            },
+                            fn ($query) => $query->whereRaw('1 = 0')
+                        )
                         ->orderBy('nombre_completo')
                         ->pluck('nombre_completo', 'cod_empleado')
                         ->toArray())
+                    ->live()
                     ->searchable()
                     ->preload()
-                    ->required(),
+                    ->required()
+                    ->disabled(fn (Get $get) => ! $get('cod_proy'))
+                    ->helperText('Solo se listan responsables del proyecto.'),
             ]);
     }
 }

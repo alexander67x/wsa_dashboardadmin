@@ -4,7 +4,9 @@ namespace App\Filament\Resources\Empleados\Pages;
 
 use App\Filament\Resources\Empleados\EmpleadoResource;
 use App\Models\User;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\CreateRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Support\Facades\Hash;
 
 class CreateEmpleado extends CreateRecord
@@ -19,6 +21,15 @@ class CreateEmpleado extends CreateRecord
 
         if (!$password) {
             throw new \Exception('La contraseña es requerida');
+        }
+
+        if (User::where('email', $data['email'])->exists()) {
+            Notification::make()
+                ->title('El correo ya está registrado en otro usuario.')
+                ->danger()
+                ->send();
+
+            throw new Halt();
         }
 
         // Crear el usuario asociado

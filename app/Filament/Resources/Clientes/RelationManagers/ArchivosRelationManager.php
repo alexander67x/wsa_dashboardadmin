@@ -33,7 +33,7 @@ class ArchivosRelationManager extends RelationManager
                 Tables\Columns\TextColumn::make('ruta_storage')
                     ->label('URL')
                     ->formatStateUsing(fn (string $state) => str($state)->limit(40))
-                    ->url(fn ($record) => $record->ruta_storage, true)
+                    ->url(fn ($record) => \Illuminate\Support\Facades\URL::signedRoute('archivos.download', ['archivo' => $record->getKey()]), true)
                     ->openUrlInNewTab(),
                 Tables\Columns\TextColumn::make('tipo_mime')
                     ->label('Tipo'),
@@ -46,10 +46,15 @@ class ArchivosRelationManager extends RelationManager
             ])
             ->headerActions([])
             ->actions([
+                Action::make('ver')
+                    ->label('Ver')
+                    ->icon('heroicon-o-eye')
+                    ->url(fn ($record) => \Illuminate\Support\Facades\URL::signedRoute('archivos.view', ['archivo' => $record->getKey()]), true)
+                    ->openUrlInNewTab(),
                 Action::make('descargar')
                     ->label('Descargar')
                     ->icon('heroicon-o-arrow-down-tray')
-                    ->url(fn ($record) => $record->ruta_storage, true)
+                    ->url(fn ($record) => \Illuminate\Support\Facades\URL::signedRoute('archivos.download', ['archivo' => $record->getKey()]), true)
                     ->openUrlInNewTab(),
                 DeleteAction::make(),
             ]);

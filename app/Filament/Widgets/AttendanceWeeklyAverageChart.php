@@ -45,7 +45,7 @@ class AttendanceWeeklyAverageChart extends ChartWidget
      */
     protected function getData(): array
     {
-        $month = $this->getFilter() ?: now()->format('Y-m');
+        $month = $this->filter ?: now()->format('Y-m');
         $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $end = $start->copy()->endOfMonth();
 

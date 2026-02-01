@@ -65,6 +65,7 @@ class CreateProyecto extends CreateRecord
                 'entidad_id' => $this->record->getKey(),
                 'creado_por' => $creadoPor,
                 'folder' => 'proyectos/cotizaciones',
+                'resource_type' => 'image',
             ]);
         }
     }

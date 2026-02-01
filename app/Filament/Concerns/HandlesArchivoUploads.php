@@ -75,6 +75,7 @@ trait HandlesArchivoUploads
         $creadoPor = $this->resolveCreadoPor($options['creado_por'] ?? null);
         $esFoto = $options['es_foto'] ?? false;
         $esEvidenciaPrincipal = $options['es_evidencia_principal'] ?? false;
+        $accessMode = $options['access_mode'] ?? 'public';
 
         $storage = Storage::disk($disk);
 
@@ -87,7 +88,8 @@ trait HandlesArchivoUploads
             $localUrl = $this->resolveLocalUrl($storage, $path);
             $mimeType = $storage->mimeType($path) ?: null;
             $fileSize = $storage->size($path) ?: null;
-            $resourceType = ($mimeType && str_starts_with($mimeType, 'image/')) ? 'image' : 'raw';
+        $resourceType = $options['resource_type']
+            ?? (($mimeType && str_starts_with($mimeType, 'image/')) ? 'image' : 'raw');
 
             $uploadData = null;
             $uploadedToCloud = false;
@@ -97,6 +99,7 @@ trait HandlesArchivoUploads
                     $uploadData = Cloudinary::uploadApi()->upload($localPath, [
                         'folder' => $folder,
                         'resource_type' => $resourceType,
+                        'access_mode' => $accessMode,
                     ]);
                     $uploadedToCloud = true;
                 } catch (Throwable $exception) {

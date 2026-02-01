@@ -35,11 +35,11 @@ class ClienteForm
                     ->disk('public')
                     ->directory('clientes/documentos')
                     ->preserveFilenames()
-                    ->openable()
-                    ->downloadable()
+                    ->openable(false)
+                    ->downloadable(false)
                     ->dehydrated(false)
                     ->columnSpanFull()
-                    ->helperText('Anexa contratos, NIT/RUC, certificados, etc.'),
+                    ->helperText('Anexa contratos, NIT/RUC, certificados, etc. (descarga desde la tabla de documentos).'),
                 Toggle::make('activo')
                     ->required(),
             ]);

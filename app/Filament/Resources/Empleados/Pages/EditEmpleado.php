@@ -7,7 +7,9 @@ use App\Models\User;
 use Filament\Actions\DeleteAction;
 use Filament\Actions\ForceDeleteAction;
 use Filament\Actions\RestoreAction;
+use Filament\Notifications\Notification;
 use Filament\Resources\Pages\EditRecord;
+use Filament\Support\Exceptions\Halt;
 use Illuminate\Support\Facades\Hash;
 
 class EditEmpleado extends EditRecord
@@ -31,6 +33,18 @@ class EditEmpleado extends EditRecord
         $formData = $this->form->getRawState();
         $password = $formData['password'] ?? null;
         
+        if (User::where('email', $data['email'])
+            ->when($empleado?->user_id, fn ($query) => $query->where('id', '!=', $empleado->user_id))
+            ->exists()
+        ) {
+            Notification::make()
+                ->title('El correo ya está registrado en otro usuario.')
+                ->danger()
+                ->send();
+
+            throw new Halt();
+        }
+
         // Si no tiene usuario asociado, crear uno
         if (!$empleado->user_id) {
             $user = User::create([

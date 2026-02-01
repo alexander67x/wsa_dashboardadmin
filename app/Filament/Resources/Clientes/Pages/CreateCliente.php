@@ -37,6 +37,7 @@ class CreateCliente extends CreateRecord
             'entidad_id' => $record->cod_cliente,
             'creado_por' => $creadoPor,
             'folder' => 'clientes/documentos',
+            'resource_type' => 'image',
         ]);
     }
 }

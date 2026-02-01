@@ -146,7 +146,7 @@ class ProyectoForm
                         'nombre_completo',
                         fn (Builder $query) => $query->whereHas(
                             'role',
-                            fn (Builder $roleQuery) => $roleQuery->where('slug', 'supervisor_obra')
+                            fn (Builder $roleQuery) => $roleQuery->where('slug', 'supervisor')
                         )
                     )
                     ->searchable()
@@ -198,11 +198,11 @@ class ProyectoForm
                     ->directory('proyectos/cotizaciones')
                     ->maxSize(51200)
                     ->preserveFilenames()
-                    ->openable()
-                    ->downloadable()
+                    ->openable(false)
+                    ->downloadable(false)
                     ->dehydrated(false)
                     ->columnSpanFull()
-                    ->helperText('Sube archivos de cotizaciones, se versionarán automáticamente (V1, V2, etc.).'),
+                    ->helperText('Sube archivos de cotizaciones, se versionarán automáticamente (V1, V2, etc.). Descarga desde la tabla de documentos.'),
 
                 // presupuesto_inicial eliminado: gestionado fuera o no aplicable
 

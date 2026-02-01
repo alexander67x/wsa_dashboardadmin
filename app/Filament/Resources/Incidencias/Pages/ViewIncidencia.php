@@ -31,37 +31,37 @@ class ViewIncidencia extends ViewRecord
             return $actions;
         }
 
-        if (in_array($this->record->estado, ['resuelta', 'cerrada'], true)) {
+        if (in_array($this->record->estado, ['registrada', 'cerrada'], true)) {
             return $actions;
         }
 
-        $actions[] = Action::make('marcar_resuelta')
-            ->label('Marcar como resuelta')
+        $actions[] = Action::make('marcar_registrada')
+            ->label('Marcar como registrada')
             ->icon('heroicon-o-check-circle')
             ->color('success')
             ->requiresConfirmation()
-            ->modalHeading('Marcar incidencia como resuelta')
-            ->modalDescription('¿Estás seguro de que deseas marcar esta incidencia como resuelta?')
+            ->modalHeading('Marcar incidencia como registrada')
+            ->modalDescription('¿Estás seguro de que deseas marcar esta incidencia como registrada?')
             ->action(function (): void {
-                $this->marcarIncidenciaResuelta();
+                $this->marcarIncidenciaRegistrada();
             });
 
         return $actions;
     }
 
-    protected function marcarIncidenciaResuelta(): void
+    protected function marcarIncidenciaRegistrada(): void
     {
         if (! $this->canResolveIncidencia()) {
             Notification::make()
-                ->title('No tienes permisos para resolver incidencias.')
+                ->title('No tienes permisos para registrar incidencias.')
                 ->danger()
                 ->send();
             return;
         }
 
-        if (in_array($this->record->estado, ['resuelta', 'cerrada'], true)) {
+        if (in_array($this->record->estado, ['registrada', 'cerrada'], true)) {
             Notification::make()
-                ->title('La incidencia ya está resuelta o cerrada.')
+                ->title('La incidencia ya está registrada o cerrada.')
                 ->warning()
                 ->send();
             return;
@@ -86,16 +86,16 @@ class ViewIncidencia extends ViewRecord
             $estadoAnterior = $this->record->estado;
 
             $this->record->update([
-                'estado' => 'resuelta',
+                'estado' => 'registrada',
                 'fecha_resolucion' => now(),
             ]);
 
             IncidenciaHistorial::create([
                 'id_incidencia' => $this->record->getKey(),
                 'estado_anterior' => $estadoAnterior,
-                'estado_nuevo' => 'resuelta',
-                'comentario' => 'Incidencia marcada como resuelta desde el panel.',
-                'accion_tomada' => 'Incidencia marcada como resuelta',
+                'estado_nuevo' => 'registrada',
+                'comentario' => 'Incidencia marcada como registrada desde el panel.',
+                'accion_tomada' => 'Incidencia marcada como registrada',
                 'usuario_cambio' => $empleado->cod_empleado,
                 'fecha_cambio' => now(),
             ]);
@@ -105,15 +105,15 @@ class ViewIncidencia extends ViewRecord
             $this->record->refresh();
 
             Notification::make()
-                ->title('Incidencia resuelta')
-                ->body('La incidencia fue marcada como resuelta.')
+                ->title('Incidencia registrada')
+                ->body('La incidencia fue marcada como registrada.')
                 ->success()
                 ->send();
         } catch (\Exception $e) {
             DB::rollBack();
             Notification::make()
                 ->title('Error')
-                ->body('No se pudo marcar la incidencia como resuelta: ' . $e->getMessage())
+                ->body('No se pudo marcar la incidencia como registrada: ' . $e->getMessage())
                 ->danger()
                 ->send();
         }
