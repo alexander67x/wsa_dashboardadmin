@@ -104,6 +104,7 @@ class IncidenciasTable
                     ->color(fn (?string $state): string => match ($state) {
                         null => 'gray',
                         'cerrada' => 'success',
+                        'registrada' => 'success',
                         'resuelta' => 'info',
                         'verificacion' => 'warning',
                         'en_proceso' => 'primary',
@@ -150,6 +151,7 @@ class IncidenciasTable
                         'en_proceso' => 'En Proceso',
                         'resuelta' => 'Resuelta',
                         'verificacion' => 'Verificación',
+                        'registrada' => 'Registrada',
                         'cerrada' => 'Cerrada',
                         'reabierta' => 'Reabierta',
                     ]),

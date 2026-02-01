@@ -18,7 +18,7 @@ class IncidenciaController extends Controller
         $validated = $request->validate([
             'projectId' => ['nullable', 'string', 'exists:proyectos,cod_proy'],
             'taskId' => ['nullable', 'integer', 'exists:tareas,id_tarea'],
-            'status' => ['nullable', Rule::in(['abierta', 'en_proceso', 'resuelta', 'verificacion', 'cerrada', 'reabierta'])],
+            'status' => ['nullable', Rule::in(['abierta', 'en_proceso', 'resuelta', 'verificacion', 'registrada', 'cerrada', 'reabierta'])],
             'limit' => ['nullable', 'integer', 'min:1', 'max:100'],
         ]);
 
