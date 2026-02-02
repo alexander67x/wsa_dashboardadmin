@@ -133,13 +133,32 @@ class IncidenciasTable
                 
                 TextColumn::make('fecha_reportado')
                     ->label('Fecha de Reporte')
-                    ->dateTime('d/m/Y H:i')
+                    ->formatStateUsing(function ($state): string {
+                        if (! $state) {
+                            return '—';
+                        }
+
+                        $date = $state instanceof \DateTimeInterface
+                            ? \Carbon\Carbon::instance($state)
+                            : \Carbon\Carbon::parse($state);
+
+                        return $date->timezone(config('app.timezone'))->format('d/m/Y H:i');
+                    })
                     ->sortable(),
                 
                 TextColumn::make('fecha_resolucion')
                     ->label('Fecha de Resolución')
-                    ->dateTime('d/m/Y H:i')
-                    ->default('—')
+                    ->formatStateUsing(function ($state): string {
+                        if (! $state) {
+                            return '—';
+                        }
+
+                        $date = $state instanceof \DateTimeInterface
+                            ? \Carbon\Carbon::instance($state)
+                            : \Carbon\Carbon::parse($state);
+
+                        return $date->timezone(config('app.timezone'))->format('d/m/Y H:i');
+                    })
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
             ])
@@ -181,4 +200,3 @@ class IncidenciasTable
             ->paginated([10, 25, 50, 100]);
     }
 }
-

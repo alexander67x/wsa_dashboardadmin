@@ -50,7 +50,9 @@ class AttendanceController extends Controller
         ]);
 
         $user = $request->user();
-        $occurredAt = Carbon::parse($data['occurred_at'] ?? now());
+        $occurredAt = $data['occurred_at']
+            ? Carbon::parse($data['occurred_at'])->timezone(config('app.timezone'))
+            : now();
 
         return DB::transaction(function () use ($data, $user, $occurredAt) {
             if ($data['type'] === 'check_in') {

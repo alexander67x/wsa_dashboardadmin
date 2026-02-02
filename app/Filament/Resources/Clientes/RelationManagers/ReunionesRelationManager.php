@@ -28,7 +28,13 @@ class ReunionesRelationManager extends RelationManager
             DateTimePicker::make('fecha_reunion')
                 ->label('Fecha de la reunión')
                 ->required()
-                ->seconds(false),
+                ->seconds(false)
+                ->rule('date_format:Y-m-d H:i')
+                ->rule('after_or_equal:2000-01-01 00:00:00')
+                ->validationMessages([
+                    'date_format' => 'Usa el formato válido de fecha y hora.',
+                    'after_or_equal' => 'El año debe ser 2000 o posterior.',
+                ]),
 
             TextInput::make('tipo')
                 ->label('Tipo de reunión')
@@ -50,7 +56,13 @@ class ReunionesRelationManager extends RelationManager
 
             DateTimePicker::make('proximo_seguimiento')
                 ->label('Próximo seguimiento')
-                ->seconds(false),
+                ->seconds(false)
+                ->rule('date_format:Y-m-d H:i')
+                ->rule('after_or_equal:2000-01-01 00:00:00')
+                ->validationMessages([
+                    'date_format' => 'Usa el formato válido de fecha y hora.',
+                    'after_or_equal' => 'El año debe ser 2000 o posterior.',
+                ]),
 
             Select::make('responsable_interno_id')
                 ->label('Responsable interno')

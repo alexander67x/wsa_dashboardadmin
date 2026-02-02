@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Archivo;
 use App\Models\Incidencia;
 use App\Models\Tarea;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
@@ -71,8 +72,9 @@ class IncidenciaController extends Controller
         ]);
 
         $severity = $data['severidad'] ?? 'media';
+        $reportedAt = now(config('app.timezone'));
 
-        $incidencia = DB::transaction(function () use ($data, $severity) {
+        $incidencia = DB::transaction(function () use ($data, $severity, $reportedAt) {
             $incidencia = Incidencia::create([
                 'cod_proy' => $data['projectId'],
                 'id_tarea' => $data['taskId'] ?? null,
@@ -85,7 +87,7 @@ class IncidenciaController extends Controller
                 'longitud' => $data['longitude'] ?? null,
                 'reportado_por' => $data['authorId'],
                 'asignado_a' => $data['assignedToId'] ?? null,
-                'fecha_reportado' => now(),
+                'fecha_reportado' => $reportedAt,
             ]);
 
             // Guardar imágenes/evidencias
@@ -93,6 +95,10 @@ class IncidenciaController extends Controller
                 $archivoIds = [];
                 foreach ($data['images'] as $image) {
                     $imageUrl = $image['url'];
+                    $takenAt = isset($image['takenAt'])
+                        ? Carbon::parse($image['takenAt'])->timezone(config('app.timezone'))
+                        : null;
+
                     $archivo = Archivo::create([
                         'entidad' => 'incidencia',
                         'entidad_id' => $incidencia->getKey(),
@@ -103,7 +109,7 @@ class IncidenciaController extends Controller
                         'es_foto' => true,
                         'latitud' => $image['latitude'] ?? null,
                         'longitud' => $image['longitude'] ?? null,
-                        'tomado_en' => isset($image['takenAt']) ? $image['takenAt'] : null,
+                        'tomado_en' => $takenAt,
                         'creado_por' => $data['authorId'],
                     ]);
                     
@@ -126,7 +132,7 @@ class IncidenciaController extends Controller
                 'comentario' => 'Incidencia creada',
                 'accion_tomada' => 'Creación de incidencia',
                 'usuario_cambio' => $data['authorId'],
-                'fecha_cambio' => now(),
+                'fecha_cambio' => $reportedAt,
             ]);
 
             return $incidencia;

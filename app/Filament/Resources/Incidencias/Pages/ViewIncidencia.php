@@ -6,6 +6,7 @@ use App\Filament\Resources\Incidencias\IncidenciaResource;
 use App\Models\Empleado;
 use App\Models\IncidenciaHistorial;
 use Filament\Actions\Action;
+use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
 use Filament\Resources\Pages\ViewRecord;
 use Illuminate\Support\Facades\Auth;
@@ -42,14 +43,21 @@ class ViewIncidencia extends ViewRecord
             ->requiresConfirmation()
             ->modalHeading('Marcar incidencia como registrada')
             ->modalDescription('¿Estás seguro de que deseas marcar esta incidencia como registrada?')
-            ->action(function (): void {
-                $this->marcarIncidenciaRegistrada();
+            ->form([
+                Textarea::make('comentario')
+                    ->label('Comentario')
+                    ->rows(3)
+                    ->maxLength(500)
+                    ->placeholder('Opcional'),
+            ])
+            ->action(function (array $data): void {
+                $this->marcarIncidenciaRegistrada($data['comentario'] ?? null);
             });
 
         return $actions;
     }
 
-    protected function marcarIncidenciaRegistrada(): void
+    protected function marcarIncidenciaRegistrada(?string $comentario = null): void
     {
         if (! $this->canResolveIncidencia()) {
             Notification::make()
@@ -84,6 +92,7 @@ class ViewIncidencia extends ViewRecord
             }
 
             $estadoAnterior = $this->record->estado;
+            $comentario = is_string($comentario) ? trim($comentario) : null;
 
             $this->record->update([
                 'estado' => 'registrada',
@@ -94,7 +103,7 @@ class ViewIncidencia extends ViewRecord
                 'id_incidencia' => $this->record->getKey(),
                 'estado_anterior' => $estadoAnterior,
                 'estado_nuevo' => 'registrada',
-                'comentario' => 'Incidencia marcada como registrada desde el panel.',
+                'comentario' => $comentario ?: 'Incidencia marcada como registrada desde el panel.',
                 'accion_tomada' => 'Incidencia marcada como registrada',
                 'usuario_cambio' => $empleado->cod_empleado,
                 'fecha_cambio' => now(),

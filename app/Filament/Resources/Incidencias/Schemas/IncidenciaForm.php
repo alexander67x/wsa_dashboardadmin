@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Incidencias\Schemas;
 use App\Filament\Components\ImageGallery;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\TextInput;
+use Filament\Forms\Components\ViewField;
 use Filament\Schemas\Schema;
 
 class IncidenciaForm
@@ -90,7 +91,7 @@ class IncidenciaForm
                     ->disabled()
                     ->dehydrated(false)
                     ->formatStateUsing(function ($state) {
-                        if (!$state) {
+                        if (! $state) {
                             return '—';
                         }
                         if (is_string($state)) {
@@ -100,7 +101,13 @@ class IncidenciaForm
                                 return $state;
                             }
                         }
-                        return $state instanceof \DateTime ? $state->format('d/m/Y H:i') : '—';
+                        if ($state instanceof \DateTimeInterface) {
+                            return \Carbon\Carbon::instance($state)
+                                ->timezone(config('app.timezone'))
+                                ->format('d/m/Y H:i');
+                        }
+
+                        return '—';
                     }),
                 
                 // Detalles de la Incidencia
@@ -139,11 +146,11 @@ class IncidenciaForm
                 
                 // Resolución
                 TextInput::make('fecha_resolucion')
-                    ->label('Fecha de Resolución')
+                    ->label('Fecha de registro')
                     ->disabled()
                     ->dehydrated(false)
                     ->formatStateUsing(function ($state) {
-                        if (!$state) {
+                        if (! $state) {
                             return '—';
                         }
                         if (is_string($state)) {
@@ -153,7 +160,13 @@ class IncidenciaForm
                                 return $state;
                             }
                         }
-                        return $state instanceof \DateTime ? $state->format('d/m/Y H:i') : '—';
+                        if ($state instanceof \DateTimeInterface) {
+                            return \Carbon\Carbon::instance($state)
+                                ->timezone(config('app.timezone'))
+                                ->format('d/m/Y H:i');
+                        }
+
+                        return '—';
                     })
                     ->visible(fn ($record) => $record && $record->fecha_resolucion),
                 
@@ -165,6 +178,24 @@ class IncidenciaForm
                     ->rows(3)
                     ->default('—')
                     ->visible(fn ($record) => $record && $record->solucion_implementada),
+
+                Textarea::make('comentario_registro')
+                    ->label('Comentario de registro')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->columnSpanFull()
+                    ->rows(3)
+                    ->default('—')
+                    ->formatStateUsing(function ($state, $record): string {
+                        if (! $record) {
+                            return '—';
+                        }
+                        $record->loadMissing('historial');
+                        $registro = $record->historial
+                            ->firstWhere('estado_nuevo', 'registrada');
+                        return $registro?->comentario ?: '—';
+                    })
+                    ->visible(fn ($record) => $record && in_array($record->estado, ['registrada', 'cerrada'], true)),
                 
                 // Ubicación
                 TextInput::make('ubicacion')
@@ -181,6 +212,17 @@ class IncidenciaForm
                         return '—';
                     })
                     ->visible(fn ($record) => $record && $record->latitud && $record->longitud),
+
+                ViewField::make('incidencia_map')
+                    ->label('Mapa')
+                    ->columnSpanFull()
+                    ->view('filament.components.incidencia-map')
+                    ->viewData(fn ($record) => [
+                        'recordId' => $record?->id_incidencia,
+                        'lat' => $record?->latitud,
+                        'lng' => $record?->longitud,
+                        'label' => $record?->titulo ?? 'Incidencia',
+                    ]),
                 
                 // Evidencias - Imágenes
                 ImageGallery::make('images_gallery')
