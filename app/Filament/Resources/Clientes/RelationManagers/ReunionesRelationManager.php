@@ -27,12 +27,14 @@ class ReunionesRelationManager extends RelationManager
         return $schema->components([
             DateTimePicker::make('fecha_reunion')
                 ->label('Fecha de la reunión')
+                ->native(false)
+                ->displayFormat('d/m/Y H:i')
                 ->required()
                 ->seconds(false)
-                ->rule('date_format:Y-m-d H:i')
+                ->hoursStep(1)
+                ->minutesStep(5)
                 ->rule('after_or_equal:2000-01-01 00:00:00')
                 ->validationMessages([
-                    'date_format' => 'Usa el formato válido de fecha y hora.',
                     'after_or_equal' => 'El año debe ser 2000 o posterior.',
                 ]),
 
@@ -56,11 +58,13 @@ class ReunionesRelationManager extends RelationManager
 
             DateTimePicker::make('proximo_seguimiento')
                 ->label('Próximo seguimiento')
+                ->native(false)
+                ->displayFormat('d/m/Y H:i')
                 ->seconds(false)
-                ->rule('date_format:Y-m-d H:i')
+                ->hoursStep(1)
+                ->minutesStep(5)
                 ->rule('after_or_equal:2000-01-01 00:00:00')
                 ->validationMessages([
-                    'date_format' => 'Usa el formato válido de fecha y hora.',
                     'after_or_equal' => 'El año debe ser 2000 o posterior.',
                 ]),
 
