@@ -26,7 +26,7 @@ class IncidenciaController extends Controller
         $limit = $validated['limit'] ?? 50;
 
         $incidencias = Incidencia::query()
-            ->with(['proyecto', 'tarea', 'reportadoPor', 'asignadoA'])
+            ->with(['proyecto', 'tarea', 'reportadoPor', 'asignadoA', 'historial'])
             ->when($validated['projectId'] ?? null, fn ($query, $codProy) => $query->where('cod_proy', $codProy))
             ->when($validated['taskId'] ?? null, fn ($query, $taskId) => $query->where('id_tarea', $taskId))
             ->when($validated['status'] ?? null, fn ($query, $estado) => $query->where('estado', $estado))
@@ -45,6 +45,7 @@ class IncidenciaController extends Controller
             'reportadoPor',
             'asignadoA',
             'archivos',
+            'historial',
         ])->findOrFail($id);
 
         return $this->transformIncidenciaDetail($incidencia);
@@ -148,6 +149,10 @@ class IncidenciaController extends Controller
 
     protected function transformIncidencia(Incidencia $incidencia): array
     {
+        $registrationComment = optional(
+            $incidencia->historial->firstWhere('estado_nuevo', 'registrada')
+        )->comentario;
+
         return [
             'id' => (string) $incidencia->getKey(),
             'projectId' => $incidencia->cod_proy,
@@ -164,11 +169,16 @@ class IncidenciaController extends Controller
             'authorName' => $incidencia->reportadoPor?->nombre_completo,
             'assignedToId' => optional($incidencia->asignadoA)?->cod_empleado ? (string) $incidencia->asignadoA->cod_empleado : null,
             'assignedToName' => $incidencia->asignadoA?->nombre_completo,
+            'registrationComment' => $registrationComment,
         ];
     }
 
     protected function transformIncidenciaDetail(Incidencia $incidencia): array
     {
+        $registrationComment = optional(
+            $incidencia->historial->firstWhere('estado_nuevo', 'registrada')
+        )->comentario;
+
         $images = $incidencia->archivos
             ? $incidencia->archivos->map(fn (Archivo $archivo) => [
                 'url' => $archivo->url,
@@ -209,6 +219,7 @@ class IncidenciaController extends Controller
             'longitude' => $incidencia->longitud,
             'solution' => $incidencia->solucion_implementada,
             'resolvedAt' => optional($incidencia->fecha_resolucion)->toDateTimeString(),
+            'registrationComment' => $registrationComment,
         ];
     }
 }

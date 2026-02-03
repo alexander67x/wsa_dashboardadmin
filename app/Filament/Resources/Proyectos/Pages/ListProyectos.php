@@ -5,6 +5,7 @@ namespace App\Filament\Resources\Proyectos\Pages;
 use App\Filament\Resources\Proyectos\ProyectoResource;
 use Filament\Actions\CreateAction;
 use Filament\Resources\Pages\ListRecords;
+use Illuminate\Support\Facades\Auth;
 
 class ListProyectos extends ListRecords
 {
@@ -12,8 +13,12 @@ class ListProyectos extends ListRecords
 
     protected function getHeaderActions(): array
     {
-        return [
-            CreateAction::make()->label('Nuevo proyecto'),
-        ];
+        $user = Auth::user();
+
+        if ($user?->empleado?->role?->slug === 'responsable_proyecto') {
+            return [];
+        }
+
+        return [CreateAction::make()->label('Nuevo proyecto')];
     }
 }

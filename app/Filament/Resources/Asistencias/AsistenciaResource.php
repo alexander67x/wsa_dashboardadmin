@@ -57,6 +57,20 @@ class AsistenciaResource extends Resource
         ];
     }
 
+    public static function shouldRegisterNavigation(): bool
+    {
+        $user = auth()->user();
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->empleado?->role?->slug === 'responsable_proyecto') {
+            return false;
+        }
+
+        return static::canViewAny();
+    }
+
     public static function canCreate(): bool
     {
         return false;

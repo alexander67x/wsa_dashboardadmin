@@ -118,8 +118,8 @@ class StockAlmacenResource extends Resource
             return false;
         }
 
-        // Gerente General solo consulta stock, no crea registros
-        if ($user->empleado?->role?->slug === 'gerencia') {
+        // Gerente General y Responsable de proyecto solo consultan stock, no crean registros
+        if (in_array($user->empleado?->role?->slug, ['gerencia', 'responsable_proyecto'], true)) {
             return false;
         }
 

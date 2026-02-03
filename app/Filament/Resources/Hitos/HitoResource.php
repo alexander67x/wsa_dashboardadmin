@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Hitos;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Hitos\Pages\CreateHito;
 use App\Filament\Resources\Hitos\Pages\EditHito;
 use App\Filament\Resources\Hitos\Pages\ListHitos;
@@ -16,6 +17,13 @@ use Filament\Tables\Table;
 
 class HitoResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = [
+        'projects.manage.structure',
+        'projects.materials.plan',
+    ];
+
     protected static ?string $model = Hito::class;
 
     protected static string|BackedEnum|null $navigationIcon = 'heroicon-o-calendar-days';

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Fases;
 
+use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Fases\Pages\CreateFase;
 use App\Filament\Resources\Fases\Pages\EditFase;
 use App\Filament\Resources\Fases\Pages\ListFases;
@@ -15,6 +16,12 @@ use Filament\Tables\Table;
 
 class FaseResource extends Resource
 {
+    use RequiresPermission;
+
+    protected static array $requiredPermissions = [
+        'projects.manage.structure',
+    ];
+
     protected static ?string $model = Fase::class;
 
     protected static ?string $navigationLabel = 'Fases';
