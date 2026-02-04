@@ -75,12 +75,15 @@ class User extends Authenticatable implements FilamentUser
         return $this->empleado?->hasPermission($permission) ?? false;
     }
 
-    /**
-     * Controla si el usuario puede acceder al panel de Filament.
-     * De momento permitimos acceso a cualquier usuario autenticado.
-     */
     public function canAccessPanel(Panel $panel): bool
     {
+        $roleSlug = $this->empleado?->role?->slug;
+
+        // El personal de obra no debe acceder al panel de Filament.
+        if ($roleSlug === 'personal_obra') {
+            return false;
+        }
+
         return true;
     }
 }

@@ -58,6 +58,17 @@ class ClienteResource extends Resource
         return parent::canViewAny();
     }
 
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        if ($user?->empleado?->role?->slug === 'adquisiciones') {
+            return false;
+        }
+
+        return parent::canCreate();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return ClienteForm::configure($schema);

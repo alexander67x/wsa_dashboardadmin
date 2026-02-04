@@ -15,7 +15,7 @@ class ListProyectos extends ListRecords
     {
         $user = Auth::user();
 
-        if ($user?->empleado?->role?->slug === 'responsable_proyecto') {
+        if (in_array($user?->empleado?->role?->slug, ['responsable_proyecto', 'adquisiciones'], true)) {
             return [];
         }
 

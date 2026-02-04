@@ -170,4 +170,15 @@ class ProyectoResource extends Resource
     {
         return 'primary';
     }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        if ($user?->empleado?->role?->slug === 'adquisiciones') {
+            return false;
+        }
+
+        return parent::canCreate();
+    }
 }

@@ -34,6 +34,27 @@ class FaseResource extends Resource
 
     protected static ?int $navigationSort = 3;
 
+    public static function canAccess(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        // Gerencia puede acceder (al menos en modo lectura).
+        if ($user->empleado?->role?->slug === 'gerencia') {
+            return true;
+        }
+
+        return static::userHasPermission();
+    }
+
+    public static function canViewAny(): bool
+    {
+        return static::canAccess();
+    }
+
     public static function form(Schema $schema): Schema
     {
         return FaseForm::configure($schema);
