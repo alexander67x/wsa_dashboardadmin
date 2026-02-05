@@ -37,7 +37,6 @@ class FaseResource extends Resource
     public static function canAccess(): bool
     {
         $user = auth()->user();
-
         if (! $user) {
             return false;
         }
@@ -63,6 +62,21 @@ class FaseResource extends Resource
     public static function table(Table $table): Table
     {
         return FasesTable::configure($table);
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->empleado?->role?->slug === 'gerencia') {
+            return true;
+        }
+
+        return static::userHasPermission();
     }
 
     public static function getPages(): array

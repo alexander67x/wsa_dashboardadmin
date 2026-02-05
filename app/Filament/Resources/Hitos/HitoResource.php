@@ -39,7 +39,6 @@ class HitoResource extends Resource
     public static function canAccess(): bool
     {
         $user = auth()->user();
-
         if (! $user) {
             return false;
         }
@@ -65,6 +64,21 @@ class HitoResource extends Resource
     public static function table(Table $table): Table
     {
         return HitosTable::configure($table);
+    }
+
+    public static function canCreate(): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->empleado?->role?->slug === 'gerencia') {
+            return true;
+        }
+
+        return static::userHasPermission();
     }
 
     public static function getRelations(): array
