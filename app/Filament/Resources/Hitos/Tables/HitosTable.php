@@ -145,6 +145,9 @@ class HitosTable
                         'revision' => 'Revisión',
                     ]),
             ])
+            ->recordActions([
+                EditAction::make(),
+            ])
             ->recordAction('edit')
             ->bulkActions([
                 BulkActionGroup::make([

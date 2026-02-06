@@ -81,6 +81,21 @@ class HitoResource extends Resource
         return static::userHasPermission();
     }
 
+    public static function canEdit($record): bool
+    {
+        $user = auth()->user();
+
+        if (! $user) {
+            return false;
+        }
+
+        if ($user->empleado?->role?->slug === 'gerencia') {
+            return true;
+        }
+
+        return static::userHasPermission();
+    }
+
     public static function getRelations(): array
     {
         return [
