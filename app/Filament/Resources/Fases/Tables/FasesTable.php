@@ -133,7 +133,7 @@ class FasesTable
                         'pausada' => 'Pausada',
                     ]),
             ])
-            ->recordUrl(fn ($record): string => FaseResource::getUrl('edit', ['record' => $record]))
+            ->recordUrl(fn ($record): string => FaseResource::getUrl('view', ['record' => $record]))
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

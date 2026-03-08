@@ -6,6 +6,8 @@ use App\Filament\Concerns\RequiresPermission;
 use App\Filament\Resources\Fases\Pages\CreateFase;
 use App\Filament\Resources\Fases\Pages\EditFase;
 use App\Filament\Resources\Fases\Pages\ListFases;
+use App\Filament\Resources\Fases\Pages\ViewFase;
+use App\Filament\Resources\Fases\RelationManagers\HitosRelationManager;
 use App\Filament\Resources\Fases\Schemas\FaseForm;
 use App\Filament\Resources\Fases\Tables\FasesTable;
 use App\Models\Fase;
@@ -64,6 +66,13 @@ class FaseResource extends Resource
         return FasesTable::configure($table);
     }
 
+    public static function getRelations(): array
+    {
+        return [
+            HitosRelationManager::class,
+        ];
+    }
+
     public static function canCreate(): bool
     {
         $user = auth()->user();
@@ -104,6 +113,7 @@ class FaseResource extends Resource
         return [
             'index' => ListFases::route('/'),
             'create' => CreateFase::route('/create'),
+            'view' => ViewFase::route('/{record}'),
             'edit' => EditFase::route('/{record}/edit'),
         ];
     }

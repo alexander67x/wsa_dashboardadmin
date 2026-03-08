@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Fase extends Model
 {
@@ -34,5 +35,10 @@ class Fase extends Model
     public function proyecto(): BelongsTo
     {
         return $this->belongsTo(Proyecto::class, 'cod_proy', 'cod_proy');
+    }
+
+    public function hitos(): HasMany
+    {
+        return $this->hasMany(Hito::class, 'id_fase', 'id_fase');
     }
 }

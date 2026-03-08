@@ -9,6 +9,7 @@ use App\Filament\Resources\Clientes\Pages\ViewCliente;
 use App\Filament\Resources\Clientes\Schemas\ClienteForm;
 use App\Filament\Resources\Clientes\Tables\ClientesTable;
 use App\Filament\Resources\Clientes\RelationManagers\ArchivosRelationManager;
+use App\Filament\Resources\Clientes\RelationManagers\ProyectosRelationManager;
 use App\Filament\Resources\Clientes\RelationManagers\ReunionesRelationManager;
 use App\Models\Cliente;
 use BackedEnum;
@@ -82,6 +83,7 @@ class ClienteResource extends Resource
     public static function getRelations(): array
     {
         return [
+            ProyectosRelationManager::class,
             ArchivosRelationManager::class,
             ReunionesRelationManager::class,
         ];
