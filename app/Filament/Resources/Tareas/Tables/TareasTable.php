@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Tareas\Tables;
 
+use App\Filament\Resources\Tareas\TareaResource;
 use App\Models\Proyecto;
 use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
@@ -240,6 +241,7 @@ class TareasTable
                 ]),
             ])
             ->defaultSort('created_at', 'desc')
+            ->recordUrl(fn ($record): string => TareaResource::getUrl('view', ['record' => $record]))
             ->striped()
             ->paginated([10, 25, 50, 100])
             ->emptyStateHeading($selectedProyecto ? 'No hay tareas en este proyecto' : 'Selecciona un proyecto para ver las tareas')

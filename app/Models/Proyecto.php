@@ -133,6 +133,23 @@ class Proyecto extends Model
             ->where('entidad', 'proyectos');
     }
 
+    public function almacenes(): HasMany
+    {
+        return $this->hasMany(Almacen::class, 'cod_proy', 'cod_proy');
+    }
+
+    public function stockAlmacen(): HasManyThrough
+    {
+        return $this->hasManyThrough(
+            StockAlmacen::class,
+            Almacen::class,
+            'cod_proy',
+            'id_almacen',
+            'cod_proy',
+            'id_almacen',
+        );
+    }
+
     // Accessors para campos virtuales
     // Accessors/Mutators removed: ubicacion now mapped directly to proyectos table columns
 

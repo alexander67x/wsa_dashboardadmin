@@ -19,6 +19,7 @@ class StockAlmacen extends Model
         'cantidad_disponible',
         'cantidad_reservada',
         'cantidad_minima_alerta',
+        'garantia_dias',
         'ubicacion_fisica',
     ];
 
@@ -26,6 +27,7 @@ class StockAlmacen extends Model
         'cantidad_disponible' => 'decimal:2',
         'cantidad_reservada' => 'decimal:2',
         'cantidad_minima_alerta' => 'decimal:2',
+        'garantia_dias' => 'integer',
     ];
 
     // Relaciones
@@ -53,5 +55,28 @@ class StockAlmacen extends Model
     public function getNecesitaReposicionAttribute(): bool
     {
         return $this->cantidad_disponible <= $this->cantidad_minima_alerta;
+    }
+
+    public function getGarantiaRestanteDiasAttribute(): ?int
+    {
+        if ($this->garantia_dias === null || $this->created_at === null) {
+            return null;
+        }
+
+        $transcurridos = $this->created_at->startOfDay()->diffInDays(now()->startOfDay());
+
+        return max(0, $this->garantia_dias - $transcurridos);
+    }
+
+    public function getFechaFinGarantiaAttribute(): ?string
+    {
+        if ($this->garantia_dias === null || $this->created_at === null) {
+            return null;
+        }
+
+        return $this->created_at
+            ->copy()
+            ->addDays((int) $this->garantia_dias)
+            ->toDateString();
     }
 }

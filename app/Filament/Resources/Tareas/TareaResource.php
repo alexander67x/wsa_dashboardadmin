@@ -5,6 +5,8 @@ namespace App\Filament\Resources\Tareas;
 use App\Filament\Resources\Tareas\Pages\CreateTarea;
 use App\Filament\Resources\Tareas\Pages\EditTarea;
 use App\Filament\Resources\Tareas\Pages\ListTareas;
+use App\Filament\Resources\Tareas\Pages\ViewTarea;
+use App\Filament\Resources\Tareas\RelationManagers\ReportesRelationManager;
 use App\Filament\Resources\Tareas\Schemas\TareaForm;
 use App\Filament\Resources\Tareas\Tables\TareasTable;
 use App\Models\Tarea;
@@ -51,7 +53,7 @@ class TareaResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            ReportesRelationManager::class,
         ];
     }
 
@@ -60,6 +62,7 @@ class TareaResource extends Resource
         return [
             'index' => ListTareas::route('/'),
             'create' => CreateTarea::route('/create'),
+            'view' => ViewTarea::route('/{record}'),
             'edit' => EditTarea::route('/{record}/edit'),
         ];
     }

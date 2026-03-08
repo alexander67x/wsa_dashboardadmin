@@ -78,4 +78,9 @@ class Tarea extends Model
     {
         return $this->belongsTo(Empleado::class, 'supervisor_asignado', 'cod_empleado');
     }
+
+    public function reportes(): HasMany
+    {
+        return $this->hasMany(ReporteAvanceTarea::class, 'id_tarea', 'id_tarea');
+    }
 }

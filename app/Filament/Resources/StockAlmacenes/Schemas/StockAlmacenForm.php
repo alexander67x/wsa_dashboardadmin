@@ -5,6 +5,7 @@ namespace App\Filament\Resources\StockAlmacenes\Schemas;
 use App\Models\Almacen;
 use App\Models\Material;
 use App\Services\ProjectAccessService;
+use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Schemas\Components\Utilities\Get;
@@ -94,6 +95,30 @@ class StockAlmacenForm
                     ->required()
                     ->minValue(0)
                     ->helperText('Alerta cuando el stock disponible llegue a este nivel')
+                    ->columnSpan(1),
+
+                TextInput::make('garantia_dias')
+                    ->label('Garantía (días)')
+                    ->numeric()
+                    ->default(0)
+                    ->minValue(0)
+                    ->helperText('Tiempo de garantía de este material en este stock.')
+                    ->columnSpan(1),
+
+                DatePicker::make('fecha_registro')
+                    ->label('Fecha de registro')
+                    ->native(false)
+                    ->displayFormat('d/m/Y')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->columnSpan(1),
+
+                DatePicker::make('fecha_fin_garantia')
+                    ->label('Fecha fin garantía')
+                    ->native(false)
+                    ->displayFormat('d/m/Y')
+                    ->disabled()
+                    ->dehydrated(false)
                     ->columnSpan(1),
 
                 TextInput::make('ubicacion_fisica')

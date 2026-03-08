@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\StockAlmacenes\Tables;
 
+use App\Filament\Resources\StockAlmacenes\StockAlmacenResource;
 use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
@@ -113,6 +114,19 @@ class StockAlmacenesTable
                     ->sortable()
                     ->toggleable(),
 
+                TextColumn::make('garantia_dias')
+                    ->label('Garantía (días)')
+                    ->numeric()
+                    ->sortable()
+                    ->toggleable(),
+
+                TextColumn::make('garantia_restante_dias')
+                    ->label('Garantía restante')
+                    ->getStateUsing(fn ($record) => $record->garantia_restante_dias)
+                    ->formatStateUsing(fn ($state) => $state === null ? '—' : "{$state} días")
+                    ->color(fn ($state) => ($state !== null && (int) $state <= 30) ? 'warning' : null)
+                    ->toggleable(),
+
                 IconColumn::make('necesita_reposicion')
                     ->label('Alerta')
                     ->boolean()
@@ -216,6 +230,7 @@ class StockAlmacenesTable
                     return true;
                 }),
             ])
+            ->recordUrl(fn ($record): string => StockAlmacenResource::getUrl('view', ['record' => $record]))
             ->defaultSort('updated_at', 'desc')
             ->striped()
             ->paginated([10, 25, 50, 100]);

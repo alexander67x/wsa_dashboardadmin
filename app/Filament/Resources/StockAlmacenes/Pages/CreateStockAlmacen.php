@@ -45,6 +45,12 @@ class CreateStockAlmacen extends CreateRecord
                         ->label('Mínimo en alerta')
                         ->numeric()
                         ->default(0),
+
+                    TextInput::make('garantia_dias')
+                        ->label('Garantía (días)')
+                        ->numeric()
+                        ->minValue(0)
+                        ->default(0),
                 ])
                 ->minItems(1)
                 ->columnSpanFull(),
@@ -75,6 +81,7 @@ class CreateStockAlmacen extends CreateRecord
                     [
                         'cantidad_disponible' => $item['cantidad_disponible'] ?? 0,
                         'cantidad_minima_alerta' => $item['cantidad_minima_alerta'] ?? 0,
+                        'garantia_dias' => $item['garantia_dias'] ?? 0,
                     ],
                 );
             }

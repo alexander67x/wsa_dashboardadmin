@@ -5,6 +5,7 @@ namespace App\Filament\Resources\StockAlmacenes;
 use App\Filament\Resources\StockAlmacenes\Pages\CreateStockAlmacen;
 use App\Filament\Resources\StockAlmacenes\Pages\EditStockAlmacen;
 use App\Filament\Resources\StockAlmacenes\Pages\ListStockAlmacenes;
+use App\Filament\Resources\StockAlmacenes\Pages\ViewStockAlmacen;
 use App\Filament\Resources\StockAlmacenes\Schemas\StockAlmacenForm;
 use App\Filament\Resources\StockAlmacenes\Tables\StockAlmacenesTable;
 use App\Models\StockAlmacen;
@@ -54,6 +55,7 @@ class StockAlmacenResource extends Resource
         return [
             'index' => ListStockAlmacenes::route('/'),
             'create' => CreateStockAlmacen::route('/create'),
+            'view' => ViewStockAlmacen::route('/{record}'),
             'edit' => EditStockAlmacen::route('/{record}/edit'),
         ];
     }
