@@ -2,6 +2,7 @@
 
 namespace App\Filament\Resources\Fases\Tables;
 
+use App\Filament\Resources\Fases\FaseResource;
 use App\Models\Proyecto;
 use App\Services\ProjectAccessService;
 use Filament\Actions\BulkActionGroup;
@@ -132,7 +133,7 @@ class FasesTable
                         'pausada' => 'Pausada',
                     ]),
             ])
-            ->recordAction('edit')
+            ->recordUrl(fn ($record): string => FaseResource::getUrl('edit', ['record' => $record]))
             ->bulkActions([
                 BulkActionGroup::make([
                     DeleteBulkAction::make(),

@@ -2,6 +2,7 @@
 
 namespace App\Filament\Pages;
 
+use App\Filament\Resources\Tareas\TareaResource;
 use App\Services\ResendMailService;
 use App\Models\KanbanBoard;
 use App\Models\KanbanColumn;
@@ -209,6 +210,17 @@ class Planificacion extends Page
         $t->fill($data);
         $t->save();
         $this->refreshData();
+    }
+
+    public function edit(int $id): void
+    {
+        $tarea = Tarea::where('cod_proy', $this->codProy)->find($id);
+
+        if (! $tarea) {
+            return;
+        }
+
+        $this->redirect(TareaResource::getUrl('edit', ['record' => $tarea]), navigate: true);
     }
 
     public function deleteTarea(int $id): void

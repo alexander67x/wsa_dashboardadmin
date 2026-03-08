@@ -8,6 +8,7 @@ use App\Models\Proyecto;
 use App\Models\ReporteAvanceTarea;
 use App\Models\Tarea;
 use App\Services\ProjectAccessService;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -26,9 +27,7 @@ class KanbanController extends Controller
             return $this->emptyBoard();
         }
 
-        $projectId = $validated['projectId'] ?? ($allowed === null
-            ? Proyecto::query()->orderBy('cod_proy')->value('cod_proy')
-            : ($allowed[0] ?? null));
+        $projectId = $validated['projectId'] ?? $this->resolveDefaultProjectId($request, $allowed);
 
         if (! $projectId) {
             return $this->emptyBoard();
@@ -62,8 +61,8 @@ class KanbanController extends Controller
         // - pendiente: tareas sin reportes de avance
         // - revision: tareas con reportes en revisión (enviados/borrador)
         // - finalizada: tareas con estado finalizada
-        $tasks = Tarea::with('responsables')
-            ->where('cod_proy', $projectId)
+        $tasks = $this->buildVisibleTasksQuery($request->user(), $projectId)
+            ->with('responsables')
             ->get();
 
         $reportsByTask = $reports->groupBy('id_tarea');
@@ -287,8 +286,8 @@ class KanbanController extends Controller
     {
         ProjectAccessService::ensureCanAccess(request()->user(), $projectId);
 
-        return Tarea::with('responsables')
-            ->where('cod_proy', $projectId)
+        return $this->buildVisibleTasksQuery(request()->user(), $projectId)
+            ->with('responsables')
             ->orderByDesc('updated_at')
             ->get()
             ->map(fn (Tarea $task) => $this->transformTaskCard($task))
@@ -317,5 +316,49 @@ class KanbanController extends Controller
             ])
             ->values()
             ->all();
+    }
+
+    protected function resolveDefaultProjectId(Request $request, ?array $allowed): ?string
+    {
+        if ($allowed === []) {
+            return null;
+        }
+
+        $taskProjectId = $this->buildVisibleTasksQuery($request->user())
+            ->select('cod_proy')
+            ->distinct()
+            ->orderBy('cod_proy')
+            ->value('cod_proy');
+
+        if ($taskProjectId) {
+            return $taskProjectId;
+        }
+
+        if ($allowed === null) {
+            return Proyecto::query()->orderBy('cod_proy')->value('cod_proy');
+        }
+
+        return $allowed[0] ?? null;
+    }
+
+    protected function buildVisibleTasksQuery($user, ?string $projectId = null): Builder
+    {
+        $query = Tarea::query();
+
+        if ($projectId) {
+            $query->where('cod_proy', $projectId);
+        }
+
+        $empleadoId = $user?->empleado?->cod_empleado;
+        $roleSlug = $user?->empleado?->role?->slug;
+
+        // Para personal de obra, solo mostrar tareas donde esté asignado como responsable.
+        if ($roleSlug === 'personal_obra' && $empleadoId) {
+            $query->whereHas('responsables', function (Builder $responsablesQuery) use ($empleadoId) {
+                $responsablesQuery->where('empleados.cod_empleado', $empleadoId);
+            });
+        }
+
+        return $query;
     }
 }
