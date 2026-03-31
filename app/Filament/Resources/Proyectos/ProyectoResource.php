@@ -9,7 +9,7 @@ use App\Filament\Resources\Proyectos\Pages\ListProyectos;
 use App\Filament\Resources\Proyectos\Pages\ViewProyecto;
 use App\Filament\Resources\Proyectos\RelationManagers\ArchivosRelationManager;
 use App\Filament\Resources\Proyectos\RelationManagers\FasesRelationManager;
-// use App\Filament\Resources\Proyectos\RelationManagers\StockAlmacenRelationManager;
+use App\Filament\Resources\Proyectos\RelationManagers\StockAlmacenRelationManager;
 use App\Filament\Resources\Proyectos\Schemas\ProyectoForm;
 use App\Filament\Resources\Proyectos\Tables\ProyectosTable;
 use App\Models\Proyecto;
@@ -59,7 +59,7 @@ class ProyectoResource extends Resource
     {
         return [
             FasesRelationManager::class,
-            // StockAlmacenRelationManager::class,
+            StockAlmacenRelationManager::class,
             ArchivosRelationManager::class,
         ];
     }

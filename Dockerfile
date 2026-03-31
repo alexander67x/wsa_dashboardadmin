@@ -55,7 +55,7 @@ COPY deploy/supervisord.conf /etc/supervisord.conf
 
 ENV APP_ENV=production \
     APP_DEBUG=true \
-    APP_URL=https://alwswsa.shop \
+    APP_URL=https://warze.site\
     DB_CONNECTION=mysql \
     DB_HOST=mysql \
     DB_PORT=3306 \

@@ -79,12 +79,20 @@ class StockAlmacenForm
                     ->columnSpan(1),
 
                 TextInput::make('cantidad_reservada')
-                    ->label('Cantidad Reservada')
+                    ->label('Cantidad en garantía')
                     ->numeric()
                     ->step(0.01)
                     ->default(0)
                     ->required()
                     ->minValue(0)
+                    ->columnSpan(1),
+
+                TextInput::make('stock_usable')
+                    ->label('Stock usable')
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->visibleOn('view')
+                    ->helperText('Cantidad usable = disponible - en garantía')
                     ->columnSpan(1),
 
                 TextInput::make('cantidad_minima_alerta')

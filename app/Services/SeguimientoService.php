@@ -17,7 +17,8 @@ class SeguimientoService
     {
         $proyectoQuery = Proyecto::query()
             ->with([
-                'tareas:id_tarea,cod_proy,fecha_inicio,fecha_fin,estado',
+                'tareas:id_tarea,cod_proy,id_hito,fecha_inicio,fecha_fin,estado',
+                'hitos:id_hito,cod_proy,titulo,fecha_hito,fecha_final_hito',
                 'planificacionesSemanales:id_plan,cod_proy,semana,año,avance_esperado_porcentaje,created_at',
                 'planificacionesSemanales.ejecuciones:id_ejecucion,id_plan,avance_real_porcentaje',
             ])
@@ -173,6 +174,21 @@ class SeguimientoService
 
     private function buildProjectSeries(Proyecto $proyecto): array
     {
+        $hitosOrdenados = $proyecto->hitos
+            ? $proyecto->hitos
+                ->sortBy(function (Hito $hito) {
+                    $inicio = optional($hito->fecha_hito)->format('Y-m-d');
+                    $fin = optional($hito->fecha_final_hito)->format('Y-m-d');
+
+                    return ($inicio ?? $fin ?? '9999-12-31').'-'.str_pad((string) $hito->getKey(), 8, '0', STR_PAD_LEFT);
+                })
+                ->values()
+            : collect();
+
+        if ($hitosOrdenados->isNotEmpty()) {
+            return $this->buildSeriesFromHitos($proyecto, $hitosOrdenados);
+        }
+
         $planificaciones = $proyecto->planificacionesSemanales
             ? $proyecto->planificacionesSemanales
                 ->sortBy(fn ($plan) => sprintf('%04d-%02d', $plan->año, $plan->semana))
@@ -269,6 +285,84 @@ class SeguimientoService
         ];
     }
 
+    private function buildSeriesFromHitos(Proyecto $proyecto, Collection $hitos): array
+    {
+        $tareasLigadas = $proyecto->tareas
+            ->filter(fn ($tarea) => ! empty($tarea->id_hito))
+            ->values();
+
+        $totalTareas = max($tareasLigadas->count(), 1);
+
+        $labels = ['Inicio'];
+        $weeklyPercentages = [0.0];
+        $totalPercentages = [0.0];
+        $curvePercentages = [0.0];
+        $plannedCurvePercentages = [0.0];
+        $detail = [[
+            'semana' => 'Inicio',
+            'planificado' => 0.0,
+            'avance_real' => 0.0,
+            'tareas_planificadas' => 0,
+            'tareas_completadas' => 0,
+            'cumplimiento_tareas' => 0.0,
+            'avance_total' => 0.0,
+        ]];
+
+        $acumuladoCompletadas = 0;
+        $acumuladoPlanificadas = 0;
+
+        foreach ($hitos as $hito) {
+            $tareasHito = $tareasLigadas->where('id_hito', $hito->getKey());
+
+            $plannedTasks = $tareasHito->count();
+            $completedTasks = $tareasHito
+                ->filter(fn ($tarea) => strtolower((string) $tarea->estado) === 'finalizada')
+                ->count();
+
+            $weeklyPercent = $plannedTasks > 0
+                ? round(($completedTasks / $plannedTasks) * 100, 2)
+                : 0.0;
+
+            $acumuladoPlanificadas += $plannedTasks;
+            $acumuladoCompletadas += $completedTasks;
+
+            $plannedCurve = round(min(100, ($acumuladoPlanificadas / $totalTareas) * 100), 2);
+            $totalPercent = round(min(100, ($acumuladoCompletadas / $totalTareas) * 100), 2);
+            $curvePercent = $totalPercent;
+
+            $label = $hito->titulo ?: 'Hito '.$hito->getKey();
+
+            $labels[] = $label;
+            $weeklyPercentages[] = $weeklyPercent;
+            $totalPercentages[] = $totalPercent;
+            $curvePercentages[] = $curvePercent;
+            $plannedCurvePercentages[] = $plannedCurve;
+
+            $detail[] = [
+                'semana' => $label,
+                'planificado' => $plannedCurve,
+                'avance_real' => $curvePercent,
+                'tareas_planificadas' => $plannedTasks,
+                'tareas_completadas' => $completedTasks,
+                'cumplimiento_tareas' => $weeklyPercent,
+                'avance_total' => $totalPercent,
+            ];
+        }
+
+        $nombre = $proyecto->nombre_ubicacion ?? $proyecto->descripcion ?? $proyecto->cod_proy;
+
+        return [
+            'codigo' => $proyecto->cod_proy,
+            'nombre' => $nombre,
+            'labels' => $labels,
+            'weekly' => $weeklyPercentages,
+            'total' => $totalPercentages,
+            'curve' => $curvePercentages,
+            'planned' => $plannedCurvePercentages,
+            'detail' => $detail,
+        ];
+    }
+
     private function synthesizePlansFromTasks(Proyecto $proyecto): Collection
     {
         if ($proyecto->tareas->isEmpty()) {
@@ -324,12 +418,48 @@ class SeguimientoService
                 return $this->dateBetween($tarea->fecha_inicio, $inicio, $fin);
             }
 
-            if ($mode === 'completed' && $tarea->estado === 'finalizada' && $tarea->fecha_fin) {
-                return $this->dateBetween($tarea->fecha_fin, $inicio, $fin);
+            if ($mode === 'completed' && $tarea->estado === 'finalizada') {
+                $completionDate = $this->resolveCompletionDate($tarea);
+
+                if (! $completionDate) {
+                    return false;
+                }
+
+                return $this->dateBetween($completionDate, $inicio, $fin);
             }
 
             return false;
         })->count();
+    }
+
+    private function resolveCompletionDate($tarea): Carbon|string|null
+    {
+        if (! $tarea->fecha_inicio && ! $tarea->fecha_fin) {
+            return null;
+        }
+
+        if (! $tarea->fecha_fin) {
+            return $tarea->fecha_inicio;
+        }
+
+        if (! $tarea->fecha_inicio) {
+            return $tarea->fecha_fin;
+        }
+
+        $inicio = $tarea->fecha_inicio instanceof Carbon
+            ? $tarea->fecha_inicio
+            : Carbon::parse($tarea->fecha_inicio);
+
+        $fin = $tarea->fecha_fin instanceof Carbon
+            ? $tarea->fecha_fin
+            : Carbon::parse($tarea->fecha_fin);
+
+        // Si la fecha fin quedó antes de inicio, usar inicio como fecha efectiva de cierre.
+        if ($fin->lessThan($inicio)) {
+            return $inicio;
+        }
+
+        return $fin;
     }
 
     private function dateBetween($fecha, Carbon $inicio, Carbon $fin): bool

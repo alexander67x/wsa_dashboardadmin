@@ -10,6 +10,12 @@ class ProjectStatusChart extends ChartWidget
 {
     protected static ?int $sort = 99;
 
+    // KPI temporalmente deshabilitado por solicitud.
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     protected ?string $heading = 'Avance de proyectos (tareas vs planificación)';
 
     protected string $color = 'primary';

@@ -9,3 +9,4 @@ class CreateFase extends CreateRecord
 {
     protected static string $resource = FaseResource::class;
 }
+

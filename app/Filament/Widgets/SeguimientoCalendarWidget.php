@@ -85,6 +85,7 @@ class SeguimientoCalendarWidget extends FullCalendarWidget
                     });
             })
             ->orderBy('fecha_inicio');
+
     }
 
     protected function mapTaskToEvent(Tarea $tarea): ?array

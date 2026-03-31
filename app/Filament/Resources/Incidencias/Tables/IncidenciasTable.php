@@ -125,12 +125,6 @@ class IncidenciasTable
                     ->searchable()
                     ->sortable(),
                 
-                TextColumn::make('asignadoA.nombre_completo')
-                    ->label('Asignado a')
-                    ->default('—')
-                    ->sortable()
-                    ->toggleable(),
-                
                 TextColumn::make('fecha_reportado')
                     ->label('Fecha de Reporte')
                     ->formatStateUsing(function ($state): string {

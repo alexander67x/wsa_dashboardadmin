@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\ProjectController;
 use App\Http\Controllers\Api\ReportController;
 use App\Http\Controllers\Api\IncidenciaController;
 use App\Http\Controllers\Api\MaterialController;
+use App\Http\Controllers\Api\GarantiaClaimController;
 use App\Http\Controllers\Api\KanbanController;
 use App\Http\Controllers\Api\PushController;
 use App\Http\Controllers\Api\TaskController;
@@ -84,6 +85,16 @@ Route::middleware('auth:sanctum')->group(function () {
 		->middleware('permission:materials.requests.deliver,inventory.movements.transfers');
 	Route::post('/materials/deliveries/{id}/confirm-reception', [MaterialController::class, 'confirmReception'])
 		->middleware('permission:materials.deliveries.confirm');
+
+	// Warranty claims
+	Route::post('/garantias/reclamos', [GarantiaClaimController::class, 'store'])
+		->middleware('permission:inventory.view.project,inventory.view.central,inventory.movements.entries,inventory.movements.exits');
+	Route::post('/garantias/reclamos/{id}/aprobar', [GarantiaClaimController::class, 'approve'])
+		->middleware('permission:inventory.view.project,inventory.view.central,inventory.movements.entries,inventory.movements.exits');
+	Route::post('/garantias/reclamos/{id}/rechazar', [GarantiaClaimController::class, 'reject'])
+		->middleware('permission:inventory.view.project,inventory.view.central,inventory.movements.entries,inventory.movements.exits');
+	Route::post('/garantias/reclamos/{id}/finalizar', [GarantiaClaimController::class, 'finalize'])
+		->middleware('permission:inventory.view.project,inventory.view.central,inventory.movements.entries,inventory.movements.exits');
 
 	// Kanban
 	Route::get('/kanban', [KanbanController::class, 'board'])

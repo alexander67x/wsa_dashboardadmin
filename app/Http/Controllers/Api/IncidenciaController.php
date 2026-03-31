@@ -64,7 +64,7 @@ class IncidenciaController extends Controller
             'severidad' => ['nullable', Rule::in(['critica', 'alta', 'media', 'baja'])],
             'latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'longitude' => ['nullable', 'numeric', 'between:-180,180'],
-            'images' => ['nullable', 'array'],
+            'images' => ['required', 'array', 'min:1'],
             'images.*.url' => ['required', 'url'],
             'images.*.latitude' => ['nullable', 'numeric', 'between:-90,90'],
             'images.*.longitude' => ['nullable', 'numeric', 'between:-180,180'],
@@ -223,4 +223,3 @@ class IncidenciaController extends Controller
         ];
     }
 }
-

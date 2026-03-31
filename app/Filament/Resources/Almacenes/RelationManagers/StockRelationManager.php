@@ -60,6 +60,7 @@ class StockRelationManager extends RelationManager
 
                 Tables\Columns\TextColumn::make('cantidad_disponible')
                     ->label('Disponible')
+                    ->getStateUsing(fn ($record) => max(0, (float) $record->cantidad_disponible - (float) $record->cantidad_reservada))
                     ->numeric(2)
                     ->sortable(),
 

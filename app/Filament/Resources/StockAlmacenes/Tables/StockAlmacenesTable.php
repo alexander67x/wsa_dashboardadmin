@@ -2,8 +2,10 @@
 
 namespace App\Filament\Resources\StockAlmacenes\Tables;
 
+use App\Filament\Resources\ReclamosGarantia\ReclamoGarantiaResource;
 use App\Filament\Resources\StockAlmacenes\StockAlmacenResource;
 use App\Services\ProjectAccessService;
+use Filament\Actions\Action;
 use Filament\Actions\BulkActionGroup;
 use Filament\Actions\DeleteBulkAction;
 use Filament\Actions\EditAction;
@@ -95,7 +97,7 @@ class StockAlmacenesTable
                     ->color(fn ($record) => $record->cantidad_disponible <= $record->cantidad_minima_alerta ? 'danger' : 'success'),
 
                 TextColumn::make('cantidad_reservada')
-                    ->label('Reservada')
+                    ->label('En garantía')
                     ->numeric(decimalPlaces: 2)
                     ->sortable()
                     ->color('warning')
@@ -204,6 +206,24 @@ class StockAlmacenesTable
             ])
             ->recordActions([
                 ViewAction::make(),
+                Action::make('reclamo_garantia')
+                    ->label('Reclamo garantía')
+                    ->icon('heroicon-o-shield-exclamation')
+                    ->color('warning')
+                    ->url(fn ($record): string => ReclamoGarantiaResource::getUrl('create', ['id_stock' => $record->getKey()]))
+                    ->visible(function ($record): bool {
+                        $role = Auth::user()?->empleado?->role?->slug;
+                        if (! in_array($role, ['adquisiciones', 'gerencia'], true)) {
+                            return false;
+                        }
+
+                        $garantiaActiva = (int) ($record->garantia_dias ?? 0) > 0
+                            && $record->created_at
+                            && now()->lte($record->created_at->copy()->addDays((int) $record->garantia_dias)->endOfDay());
+                        $stockReal = ((float) $record->cantidad_disponible - (float) $record->cantidad_reservada) > 0;
+
+                        return $garantiaActiva && $stockReal;
+                    }),
                 EditAction::make()
                     ->visible(function () {
                         $user = Auth::user();

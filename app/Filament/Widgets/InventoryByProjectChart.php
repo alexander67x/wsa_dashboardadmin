@@ -9,6 +9,12 @@ class InventoryByProjectChart extends ChartWidget
 {
     protected static ?int $sort = 4;
 
+    // KPI temporalmente deshabilitado por solicitud.
+    public static function canView(): bool
+    {
+        return false;
+    }
+
     protected ?string $heading = 'Valor de materiales por proyecto (Top 5)';
 
     protected string $color = 'warning';

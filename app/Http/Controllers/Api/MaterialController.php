@@ -585,7 +585,7 @@ class MaterialController extends Controller
 			'deliveries.*.lotNumber' => ['nullable', 'string', 'max:255'],
 			'deliveries.*.observations' => ['nullable', 'string', 'max:500'],
 			'observations' => ['nullable', 'string', 'max:1000'],
-			'images' => ['nullable', 'array'],
+			'images' => ['required', 'array', 'min:1'],
 			'images.*.url' => ['required', 'url', 'max:2048'],
 			'images.*.latitude' => ['nullable', 'numeric'],
 			'images.*.longitude' => ['nullable', 'numeric'],
