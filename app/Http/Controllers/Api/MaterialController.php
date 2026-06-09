@@ -292,14 +292,13 @@ class MaterialController extends Controller
 				$requiereCompra = false;
 				
 				if ($almacenPadre) {
-					$stockPadre = \App\Models\StockAlmacen::where('id_almacen', $almacenPadre->id_almacen)
+					$stocksPadre = \App\Models\StockAlmacen::where('id_almacen', $almacenPadre->id_almacen)
 						->where('id_material', $item['materialId'])
-						->first();
+						->get();
 					
-					if ($stockPadre) {
-						// Calcular cantidad disponible (disponible - reservada)
-						$cantidadDisponiblePadre = max(0, $stockPadre->cantidad_disponible - $stockPadre->cantidad_reservada);
-					}
+					$cantidadDisponiblePadre = $stocksPadre->sum(
+						fn ($stockPadre) => max(0, (float) $stockPadre->cantidad_disponible - (float) $stockPadre->cantidad_reservada)
+					);
 					
 					// Calcular cantidad faltante
 					if ($cantidadDisponiblePadre < $item['qty']) {
@@ -372,6 +371,15 @@ class MaterialController extends Controller
 		if (!$solicitud->items || $solicitud->items->isEmpty()) {
 			return response()->json([
 				'message' => 'La solicitud no tiene materiales asociados'
+			], 422);
+		}
+
+		if (
+			$data['action'] === 'aprobar_solo_stock'
+			&& ! $solicitud->items->contains(fn ($item) => (float) ($item->cantidad_disponible_padre ?? 0) > 0)
+		) {
+			return response()->json([
+				'message' => 'No hay stock disponible para ningun material en el almacen padre. Debes aprobar con compra o rechazar la solicitud.'
 			], 422);
 		}
 
@@ -578,56 +586,46 @@ class MaterialController extends Controller
 					$lotesCreados[] = $lote;
 				}
 
-				// Verificar stock disponible en almacén origen
 				$lotIdFromPayload = $delivery['lotId'] ?? null;
+				$stockMovements = $this->consumirStockOrigen(
+					$almacenOrigen->id_almacen,
+					$item->id_material,
+					(float) $delivery['quantity'],
+					$lotIdFromPayload,
+					$item->material->nombre_producto
+				);
 
-				$stockOrigenQuery = \App\Models\StockAlmacen::where('id_almacen', $almacenOrigen->id_almacen)
-					->where('id_material', $item->id_material)
-					->when($lotIdFromPayload, function ($query) use ($lotIdFromPayload) {
-						return $query->where('id_lote', $lotIdFromPayload);
-					})
-					->orderByDesc('cantidad_disponible');
+				$deliveryLoteId = $loteDestinoId;
 
-				$stockOrigen = $stockOrigenQuery->first();
+				foreach ($stockMovements as $movement) {
+					$loteMovimientoDestinoId = $loteDestinoId ?? $movement['id_lote'];
 
-				$disponible = $stockOrigen ? ($stockOrigen->cantidad_disponible - $stockOrigen->cantidad_reservada) : 0;
+					if ($deliveryLoteId === null && count($stockMovements) === 1) {
+						$deliveryLoteId = $loteMovimientoDestinoId;
+					}
 
-				if (!$stockOrigen || $disponible < $delivery['quantity']) {
-					throw new \Exception("No hay stock suficiente en el almacén origen para el material {$item->material->nombre_producto}. Disponible: " . $disponible);
-				}
+					$stockDestino = \App\Models\StockAlmacen::where('id_almacen', $almacenDestino->id_almacen)
+						->where('id_material', $item->id_material)
+						->when($loteMovimientoDestinoId, function ($query) use ($loteMovimientoDestinoId) {
+							return $query->where('id_lote', $loteMovimientoDestinoId);
+						}, function ($query) {
+							return $query->whereNull('id_lote');
+						})
+						->lockForUpdate()
+						->first();
 
-				$origenLoteId = $stockOrigen->id_lote;
-
-				// Si no se especificó lote destino, usar el lote real del stock origen
-				if (!$loteDestinoId) {
-					$loteDestinoId = $origenLoteId;
-				}
-
-				// Disminuir stock en almacén origen
-				$stockOrigen->decrement('cantidad_disponible', $delivery['quantity']);
-
-				// Aumentar stock en almacén destino
-				$stockDestino = \App\Models\StockAlmacen::where('id_almacen', $almacenDestino->id_almacen)
-					->where('id_material', $item->id_material)
-					->when($loteDestinoId, function ($query) use ($loteDestinoId) {
-						return $query->where('id_lote', $loteDestinoId);
-					}, function ($query) {
-						return $query->whereNull('id_lote');
-					})
-					->first();
-
-				if ($stockDestino) {
-					$stockDestino->increment('cantidad_disponible', $delivery['quantity']);
-				} else {
-					// Crear nuevo registro de stock si no existe
-					\App\Models\StockAlmacen::create([
-						'id_almacen' => $almacenDestino->id_almacen,
-						'id_material' => $item->id_material,
-						'id_lote' => $loteDestinoId,
-						'cantidad_disponible' => $delivery['quantity'],
-						'cantidad_reservada' => 0,
-						'cantidad_minima_alerta' => $item->material->stock_minimo ?? 0,
-					]);
+					if ($stockDestino) {
+						$stockDestino->increment('cantidad_disponible', $movement['quantity']);
+					} else {
+						\App\Models\StockAlmacen::create([
+							'id_almacen' => $almacenDestino->id_almacen,
+							'id_material' => $item->id_material,
+							'id_lote' => $loteMovimientoDestinoId,
+							'cantidad_disponible' => $movement['quantity'],
+							'cantidad_reservada' => 0,
+							'cantidad_minima_alerta' => $item->material->stock_minimo ?? 0,
+						]);
+					}
 				}
 
 				// Generar número de entrega
@@ -641,7 +639,7 @@ class MaterialController extends Controller
 					'id_solicitud' => $solicitud->id_solicitud,
 					'id_item' => $item->id_item,
 					'id_material' => $item->id_material,
-					'id_lote' => $loteDestinoId,
+					'id_lote' => $deliveryLoteId,
 					'id_almacen_origen' => $almacenOrigen->id_almacen,
 					'id_almacen_destino' => $almacenDestino->id_almacen,
 					'cantidad_entregada' => $delivery['quantity'],
@@ -658,26 +656,27 @@ class MaterialController extends Controller
 
 				$entregasCreadas[] = $materialDelivery;
 
-				// Registrar movimiento de inventario (transferencia)
-				DB::table('movimientos_inventario')->insert([
-					'numero_movimiento' => 'MOV-' . now()->format('YmdHis') . '-' . rand(1000, 9999),
-					'id_material' => $item->id_material,
-					'id_lote' => $origenLoteId,
-					'id_almacen_origen' => $almacenOrigen->id_almacen,
-					'id_almacen_destino' => $almacenDestino->id_almacen,
-					'tipo_movimiento' => 'transferencia',
-					'cantidad' => $delivery['quantity'],
-					'referencia' => $solicitud->numero_solicitud,
-					'motivo' => "Despacho de solicitud {$solicitud->numero_solicitud} - Entrega {$numeroEntrega}",
-					'fecha_movimiento' => now(),
-					'registrado_por' => $empleado->cod_empleado,
-					'created_at' => now(),
-				]);
+				foreach ($stockMovements as $movement) {
+					DB::table('movimientos_inventario')->insert([
+						'numero_movimiento' => 'MOV-' . now()->format('YmdHis') . '-' . rand(1000, 9999),
+						'id_material' => $item->id_material,
+						'id_lote' => $movement['id_lote'],
+						'id_almacen_origen' => $almacenOrigen->id_almacen,
+						'id_almacen_destino' => $almacenDestino->id_almacen,
+						'tipo_movimiento' => 'transferencia',
+						'cantidad' => $movement['quantity'],
+						'referencia' => $solicitud->numero_solicitud,
+						'motivo' => "Despacho de solicitud {$solicitud->numero_solicitud} - Entrega {$numeroEntrega}",
+						'fecha_movimiento' => now(),
+						'registrado_por' => $empleado->cod_empleado,
+						'created_at' => now(),
+					]);
+				}
 
 				// Actualizar cantidad entregada del item
 				$item->update([
 					'cantidad_entregada' => $nuevaCantidadEntregada,
-					'id_lote' => $loteDestinoId ?? $item->id_lote,
+					'id_lote' => $deliveryLoteId ?? $item->id_lote,
 					'observaciones' => $observacionesEntrega 
 						? ($item->observaciones ? $item->observaciones . "\n\nEntrega {$numeroEntrega}: " . $observacionesEntrega : "Entrega {$numeroEntrega}: " . $observacionesEntrega)
 						: $item->observaciones,
@@ -759,6 +758,58 @@ class MaterialController extends Controller
 				'error' => $e->getMessage()
 			], 500);
 		}
+	}
+
+	private function consumirStockOrigen(
+		int $almacenId,
+		int $materialId,
+		float $cantidadSolicitada,
+		?int $loteId,
+		string $nombreMaterial
+	): array {
+		$stocksOrigen = \App\Models\StockAlmacen::where('id_almacen', $almacenId)
+			->where('id_material', $materialId)
+			->when($loteId, function ($query) use ($loteId) {
+				return $query->where('id_lote', $loteId);
+			})
+			->orderByDesc('cantidad_disponible')
+			->lockForUpdate()
+			->get();
+
+		$disponibleTotal = $stocksOrigen->sum(
+			fn ($stockOrigen) => max(0, (float) $stockOrigen->cantidad_disponible - (float) $stockOrigen->cantidad_reservada)
+		);
+
+		if ($disponibleTotal < $cantidadSolicitada) {
+			throw new \Exception("No hay stock suficiente en el almacén origen para el material {$nombreMaterial}. Disponible: {$disponibleTotal}");
+		}
+
+		$restante = $cantidadSolicitada;
+		$movements = [];
+
+		foreach ($stocksOrigen as $stockOrigen) {
+			if ($restante <= 0) {
+				break;
+			}
+
+			$disponible = max(0, (float) $stockOrigen->cantidad_disponible - (float) $stockOrigen->cantidad_reservada);
+
+			if ($disponible <= 0) {
+				continue;
+			}
+
+			$cantidadConsumida = min($restante, $disponible);
+			$stockOrigen->decrement('cantidad_disponible', $cantidadConsumida);
+
+			$movements[] = [
+				'id_lote' => $stockOrigen->id_lote,
+				'quantity' => $cantidadConsumida,
+			];
+
+			$restante -= $cantidadConsumida;
+		}
+
+		return $movements;
 	}
 
 	/**
