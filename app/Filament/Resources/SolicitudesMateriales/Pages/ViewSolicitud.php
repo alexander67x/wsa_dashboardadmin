@@ -349,6 +349,16 @@ class ViewSolicitud extends ViewRecord
                 return;
             }
 
+            if (! $this->tieneStockDisponibleEnAlmacenPadre()) {
+                Notification::make()
+                    ->title('No se puede aprobar solo con stock')
+                    ->body('No hay stock disponible para ningún material en el almacén padre. Debes aprobar con compra o rechazar la solicitud.')
+                    ->warning()
+                    ->send();
+                DB::rollBack();
+                return;
+            }
+
             // Actualizar estado de la solicitud
             $accionTexto = 'Aprobada solo con stock disponible en almacén padre';
             $observacionesTexto = $observaciones 
@@ -390,6 +400,13 @@ class ViewSolicitud extends ViewRecord
                 ->danger()
                 ->send();
         }
+    }
+
+    protected function tieneStockDisponibleEnAlmacenPadre(): bool
+    {
+        $this->record->loadMissing('items');
+
+        return $this->record->items->contains(fn ($item): bool => (float) ($item->cantidad_disponible_padre ?? 0) > 0);
     }
 
     protected function rechazarSolicitud(string $observaciones): void

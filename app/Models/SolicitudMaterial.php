@@ -115,14 +115,14 @@ class SolicitudMaterial extends Model
             return 0;
         }
 
-        $totalSolicitado = $this->items->sum('cantidad_solicitada');
+        $totalAprobado = $this->items->sum(fn ($item) => $item->cantidad_aprobada ?? $item->cantidad_solicitada);
         $totalEntregado = $this->items->sum('cantidad_entregada');
 
-        if ($totalSolicitado == 0) {
+        if ($totalAprobado == 0) {
             return 0;
         }
 
-        return ($totalEntregado / $totalSolicitado) * 100;
+        return ($totalEntregado / $totalAprobado) * 100;
     }
 
     public function getRequiereCompraAttribute(): bool
@@ -147,4 +147,3 @@ class SolicitudMaterial extends Model
         })->count();
     }
 }
-
