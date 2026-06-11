@@ -7,4 +7,5 @@ public/storage
 public/build
 .env
 .env.*
+!.env.example
 npm-debug.log*

@@ -52,16 +52,22 @@ RUN chown -R www-data:www-data storage bootstrap/cache
 
 COPY deploy/nginx.conf /etc/nginx/nginx.conf
 COPY deploy/supervisord.conf /etc/supervisord.conf
+COPY deploy/docker-entrypoint.sh /usr/local/bin/docker-entrypoint.sh
+RUN chmod +x /usr/local/bin/docker-entrypoint.sh
 
 ENV APP_ENV=production \
     APP_DEBUG=true \
-    APP_URL=https://warze.site\
+    APP_URL=http://localhost:8081 \
     DB_CONNECTION=mysql \
     DB_HOST=mysql \
     DB_PORT=3306 \
-    DB_DATABASE=app \
-    DB_USERNAME=app \
-    DB_PASSWORD=secret \
+    DB_DATABASE=wsa_dashboardadmin \
+    DB_USERNAME=wsa \
+    DB_PASSWORD=wsa_secret \
+    SESSION_DRIVER=database \
+    CACHE_STORE=database \
+    QUEUE_CONNECTION=database \
+    APP_RUN_SEEDERS=false \
     TZ=America/La_Paz
 
 RUN ln -snf /usr/share/zoneinfo/America/La_Paz /etc/localtime \
@@ -69,4 +75,4 @@ RUN ln -snf /usr/share/zoneinfo/America/La_Paz /etc/localtime \
 
 EXPOSE 80
 
-CMD ["/usr/bin/supervisord", "-c", "/etc/supervisord.conf"]
+ENTRYPOINT ["/usr/local/bin/docker-entrypoint.sh"]
