@@ -8,6 +8,7 @@ use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Filament\Notifications\Notification;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\Storage;
+use Throwable;
 
 trait HandlesArchivoUploads
 {
@@ -59,7 +60,9 @@ trait HandlesArchivoUploads
      *     folder?: string|null,
      *     disk?: string,
      *     es_foto?: bool,
-     *     es_evidencia_principal?: bool
+     *     es_evidencia_principal?: bool,
+     *     resource_type?: string,
+     *     access_mode?: string
      * }  $options
      */
     protected function storeArchivos(array $paths, array $options): void
@@ -88,8 +91,8 @@ trait HandlesArchivoUploads
             $localUrl = $this->resolveLocalUrl($storage, $path);
             $mimeType = $storage->mimeType($path) ?: null;
             $fileSize = $storage->size($path) ?: null;
-        $resourceType = $options['resource_type']
-            ?? (($mimeType && str_starts_with($mimeType, 'image/')) ? 'image' : 'raw');
+            $resourceType = $options['resource_type']
+                ?? (($mimeType && str_starts_with($mimeType, 'image/')) ? 'image' : 'raw');
 
             $uploadData = null;
             $uploadedToCloud = false;
