@@ -6,7 +6,6 @@ use App\Filament\Resources\SolicitudesMateriales\SolicitudMaterialResource;
 use App\Models\Almacen;
 use App\Models\Empleado;
 use App\Models\SolicitudHistorial;
-use App\Models\StockAlmacen;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Textarea;
 use Filament\Notifications\Notification;
@@ -525,53 +524,6 @@ class ViewSolicitud extends ViewRecord
                     ->send();
                 DB::rollBack();
                 return;
-            }
-
-            $requiereCompra = (bool) $this->record->requiere_compra;
-
-            foreach ($this->record->items as $item) {
-                $cantidadADescontar = $item->cantidad_aprobada ?? $item->cantidad_solicitada ?? 0;
-
-                if ($cantidadADescontar <= 0) {
-                    continue;
-                }
-
-                $stockRows = StockAlmacen::where('id_almacen', $almacenOrigen->id_almacen)
-                    ->where('id_material', $item->id_material)
-                    ->orderByDesc('cantidad_disponible')
-                    ->lockForUpdate()
-                    ->get();
-
-                $disponibleTotal = $stockRows->sum(function ($row) {
-                    return max(0, (float) $row->cantidad_disponible - (float) $row->cantidad_reservada);
-                });
-
-                if ($disponibleTotal <= 0) {
-                    continue;
-                }
-
-                if (! $requiereCompra && $disponibleTotal < $cantidadADescontar) {
-                    $materialNombre = $item->material?->nombre_producto ?? 'material';
-                    throw new \Exception("No hay stock suficiente en el almacén padre para {$materialNombre}. Disponible: {$disponibleTotal}");
-                }
-
-                $restante = $requiereCompra
-                    ? min($cantidadADescontar, $disponibleTotal)
-                    : $cantidadADescontar;
-                foreach ($stockRows as $stockRow) {
-                    if ($restante <= 0) {
-                        break;
-                    }
-
-                    $disponible = max(0, (float) $stockRow->cantidad_disponible - (float) $stockRow->cantidad_reservada);
-                    if ($disponible <= 0) {
-                        continue;
-                    }
-
-                    $descontar = min($restante, $disponible);
-                    $stockRow->decrement('cantidad_disponible', $descontar);
-                    $restante -= $descontar;
-                }
             }
 
             $this->record->update([
