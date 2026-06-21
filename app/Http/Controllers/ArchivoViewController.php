@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Archivo;
-use CloudinaryLabs\CloudinaryLaravel\Facades\Cloudinary;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Storage;
@@ -38,7 +37,7 @@ class ArchivoViewController extends Controller
             ]);
         }
 
-        $urls = $this->resolveRemoteUrls($record);
+        $urls = $record->resolveRemoteFetchUrls();
 
         if (empty($urls)) {
             abort(404);
@@ -95,90 +94,6 @@ class ArchivoViewController extends Controller
         }
 
         return $candidate && Storage::disk('public')->exists($candidate) ? $candidate : null;
-    }
-
-    /**
-     * Prefer public Cloudinary/local URLs, then fall back to signed/raw download
-     * URLs for private or restricted Cloudinary assets.
-     *
-     * @return array<int, string>
-     */
-    private function resolveRemoteUrls(Archivo $record): array
-    {
-        $urls = [];
-        $storedUrl = $record->ruta_storage;
-
-        if ($storedUrl && filter_var($storedUrl, FILTER_VALIDATE_URL)) {
-            $urls[] = $storedUrl;
-
-            if (str_contains($storedUrl, 'res.cloudinary.com/')) {
-                $signedUrl = $this->buildPrivateCloudinaryDownloadUrl($storedUrl);
-
-                if ($signedUrl) {
-                    $urls[] = $signedUrl;
-                }
-            }
-        }
-
-        $downloadUrl = $record->getDownloadUrl();
-
-        if ($downloadUrl && filter_var($downloadUrl, FILTER_VALIDATE_URL)) {
-            $urls[] = $downloadUrl;
-        }
-
-        return array_values(array_unique($urls));
-    }
-
-    private function buildPrivateCloudinaryDownloadUrl(?string $url): ?string
-    {
-        if (! $url) {
-            return null;
-        }
-
-        $parsed = parse_url($url);
-        $path = $parsed['path'] ?? null;
-
-        if (! $path) {
-            return null;
-        }
-
-        $segments = array_values(array_filter(explode('/', ltrim($path, '/'))));
-
-        if (count($segments) < 3) {
-            return null;
-        }
-
-        $cloudName = config('cloudinary.cloud_url') ? parse_url(config('cloudinary.cloud_url'))['host'] ?? null : null;
-        $cloudName ??= config('cloudinary.cloud_name');
-
-        if ($cloudName && $segments[0] === $cloudName) {
-            array_shift($segments);
-        }
-
-        $resourceType = $segments[0] ?? null;
-        $deliveryType = $segments[1] ?? null;
-        $publicParts = array_slice($segments, 2);
-
-        if (! empty($publicParts) && str_starts_with($publicParts[0], 'v') && ctype_digit(substr($publicParts[0], 1))) {
-            array_shift($publicParts);
-        }
-
-        $publicPath = implode('/', $publicParts);
-        $format = pathinfo($publicPath, PATHINFO_EXTENSION);
-        $publicId = $format ? substr($publicPath, 0, -1 - strlen($format)) : $publicPath;
-
-        if (! $resourceType || ! $publicId || ! $format) {
-            return null;
-        }
-
-        try {
-            return Cloudinary::uploadApi()->privateDownloadUrl($publicId, $format, [
-                'type' => $deliveryType,
-                'resource_type' => $resourceType,
-            ]);
-        } catch (\Throwable) {
-            return null;
-        }
     }
 
     private function resolveFilename(?string $name, string $url, string $contentType): string
