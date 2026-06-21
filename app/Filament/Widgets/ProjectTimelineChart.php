@@ -15,6 +15,8 @@ class ProjectTimelineChart extends ChartWidget
 
     protected string $color = 'secondary';
 
+    protected ?string $maxHeight = '360px';
+
     protected function getType(): string
     {
         return 'bar';
@@ -72,8 +74,14 @@ class ProjectTimelineChart extends ChartWidget
     protected function getOptions(): array|RawJs|null
     {
         return [
+            'maintainAspectRatio' => false,
             'indexAxis' => 'y',
             'scales' => [
+                'y' => [
+                    'ticks' => [
+                        'autoSkip' => false,
+                    ],
+                ],
                 'x' => [
                     'title' => [
                         'display' => true,

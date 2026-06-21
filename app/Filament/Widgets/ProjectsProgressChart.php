@@ -14,6 +14,8 @@ class ProjectsProgressChart extends ChartWidget
 
     protected string $color = 'info';
 
+    protected ?string $maxHeight = '340px';
+
     protected function getType(): string
     {
         return 'bar';
@@ -49,11 +51,17 @@ class ProjectsProgressChart extends ChartWidget
     protected function getOptions(): array|RawJs|null
     {
         return [
+            'maintainAspectRatio' => false,
             'indexAxis' => 'y',
             'plugins' => [
                 'legend' => ['display' => false],
             ],
             'scales' => [
+                'y' => [
+                    'ticks' => [
+                        'autoSkip' => false,
+                    ],
+                ],
                 'x' => [
                     'suggestedMin' => 0,
                     'suggestedMax' => 100,

@@ -3,6 +3,7 @@
 namespace App\Filament\Widgets;
 
 use App\Models\Cliente;
+use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 
 class ProjectsByClientChart extends ChartWidget
@@ -12,6 +13,8 @@ class ProjectsByClientChart extends ChartWidget
     protected ?string $heading = 'Proyectos por cliente (Top 5)';
 
     protected string $color = 'success';
+
+    protected ?string $maxHeight = '320px';
 
     protected function getType(): string
     {
@@ -49,6 +52,35 @@ class ProjectsByClientChart extends ChartWidget
                 [
                     'label' => 'Proyectos',
                     'data' => $data,
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|RawJs|null
+     */
+    protected function getOptions(): array|RawJs|null
+    {
+        return [
+            'maintainAspectRatio' => false,
+            'plugins' => [
+                'legend' => [
+                    'position' => 'bottom',
+                ],
+            ],
+            'scales' => [
+                'x' => [
+                    'ticks' => [
+                        'maxRotation' => 25,
+                        'minRotation' => 0,
+                    ],
+                ],
+                'y' => [
+                    'beginAtZero' => true,
+                    'ticks' => [
+                        'precision' => 0,
+                    ],
                 ],
             ],
         ];
