@@ -6,6 +6,7 @@ use App\Models\Proyecto;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
 use Illuminate\Support\Carbon;
+use Illuminate\Support\Str;
 
 class ProjectTimelineChart extends ChartWidget
 {
@@ -15,7 +16,7 @@ class ProjectTimelineChart extends ChartWidget
 
     protected string $color = 'secondary';
 
-    protected ?string $maxHeight = '360px';
+    protected ?string $maxHeight = '480px';
 
     protected function getType(): string
     {
@@ -34,6 +35,7 @@ class ProjectTimelineChart extends ChartWidget
             ->get(['nombre_ubicacion', 'fecha_inicio', 'fecha_fin_estimada']);
 
         $labels = [];
+        $fullLabels = [];
         $duraciones = [];
         $transcurrido = [];
 
@@ -46,23 +48,29 @@ class ProjectTimelineChart extends ChartWidget
             $duracion = max(1, $inicio->diffInDays($fin));
             $pasados = $inicio->isAfter($hoy) ? 0 : min($duracion, $inicio->diffInDays($hoy));
 
-            $labels[] = $proyecto->nombre_ubicacion;
+            $fullLabels[] = $proyecto->nombre_ubicacion;
+            $labels[] = Str::limit($proyecto->nombre_ubicacion, 34);
             $duraciones[] = $duracion;
             $transcurrido[] = $pasados;
         }
 
         return [
             'labels' => $labels,
+            'fullLabels' => $fullLabels,
             'datasets' => [
                 [
                     'label' => 'Duración (días)',
                     'data' => $duraciones,
                     'backgroundColor' => 'rgba(148, 163, 184, 0.6)', // slate-400
+                    'barPercentage' => 0.85,
+                    'categoryPercentage' => 0.8,
                 ],
                 [
                     'label' => 'Días transcurridos',
                     'data' => $transcurrido,
                     'backgroundColor' => 'rgba(34, 197, 94, 0.8)', // green-500
+                    'barPercentage' => 0.85,
+                    'categoryPercentage' => 0.8,
                 ],
             ],
         ];
@@ -73,22 +81,34 @@ class ProjectTimelineChart extends ChartWidget
      */
     protected function getOptions(): array|RawJs|null
     {
-        return [
-            'maintainAspectRatio' => false,
-            'indexAxis' => 'y',
-            'scales' => [
-                'y' => [
-                    'ticks' => [
-                        'autoSkip' => false,
-                    ],
-                ],
-                'x' => [
-                    'title' => [
-                        'display' => true,
-                        'text' => 'Días',
-                    ],
-                ],
-            ],
-        ];
+        return RawJs::make(<<<'JS'
+{
+  maintainAspectRatio: false,
+  indexAxis: 'y',
+  plugins: {
+    tooltip: {
+      callbacks: {
+        title: function (items) {
+          const item = items[0];
+          return item.chart.data.fullLabels?.[item.dataIndex] ?? item.label;
+        }
+      }
+    }
+  },
+  scales: {
+    y: {
+      ticks: {
+        autoSkip: false
+      }
+    },
+    x: {
+      title: {
+        display: true,
+        text: 'Días'
+      }
+    }
+  }
+}
+JS);
     }
 }
