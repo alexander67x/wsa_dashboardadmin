@@ -144,7 +144,7 @@ class AttendanceWeeklyAverageChart extends ChartWidget
         return RawJs::make(<<<'JS'
 {
   responsive: true,
-  maintainAspectRatio: false,
+  resizeDelay: 200,
   scales: {
     y: {
       beginAtZero: true,
