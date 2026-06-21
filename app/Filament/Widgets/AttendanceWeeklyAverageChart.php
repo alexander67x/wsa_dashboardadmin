@@ -144,8 +144,13 @@ class AttendanceWeeklyAverageChart extends ChartWidget
         return RawJs::make(<<<'JS'
 {
   responsive: true,
-  aspectRatio: 4,
+  maintainAspectRatio: false,
   resizeDelay: 200,
+  onResize: function (chart) {
+    if (chart.canvas && chart.canvas.parentNode) {
+      chart.canvas.parentNode.style.height = '300px';
+    }
+  },
   scales: {
     y: {
       beginAtZero: true,
