@@ -6,6 +6,7 @@ use App\Models\AttendanceSession;
 use Carbon\Carbon;
 use Filament\Support\RawJs;
 use Filament\Widgets\ChartWidget;
+use Illuminate\Support\Collection;
 
 class AttendanceWeeklyAverageChart extends ChartWidget
 {
@@ -19,6 +20,13 @@ class AttendanceWeeklyAverageChart extends ChartWidget
 
     protected ?string $maxHeight = '420px';
 
+    public ?string $filter = null;
+
+    public function mount(): void
+    {
+        $this->filter ??= $this->getDefaultMonth();
+    }
+
     protected function getType(): string
     {
         return 'bar';
@@ -30,7 +38,12 @@ class AttendanceWeeklyAverageChart extends ChartWidget
     protected function getFilters(): ?array
     {
         $filters = [];
-        $current = now()->startOfMonth();
+        $current = Carbon::parse(
+            AttendanceSession::query()
+                ->whereNotNull('check_in_at')
+                ->whereNotNull('check_out_at')
+                ->max('check_in_at') ?: now()
+        )->startOfMonth();
 
         for ($i = 0; $i < 12; $i++) {
             $month = $current->copy()->subMonths($i);
@@ -45,15 +58,19 @@ class AttendanceWeeklyAverageChart extends ChartWidget
      */
     protected function getData(): array
     {
-        $month = $this->filter ?: now()->format('Y-m');
+        $month = $this->filter ?: $this->getDefaultMonth();
         $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
         $end = $start->copy()->endOfMonth();
 
-        $sessions = AttendanceSession::query()
-            ->whereBetween('check_in_at', [$start, $end])
-            ->whereNotNull('check_in_at')
-            ->whereNotNull('check_out_at')
-            ->get(['check_in_at', 'check_out_at']);
+        $sessions = $this->getClosedSessionsBetween($start, $end);
+
+        if ($sessions->isEmpty() && $month !== $this->getDefaultMonth()) {
+            $month = $this->getDefaultMonth();
+            $this->filter = $month;
+            $start = Carbon::createFromFormat('Y-m', $month)->startOfMonth();
+            $end = $start->copy()->endOfMonth();
+            $sessions = $this->getClosedSessionsBetween($start, $end);
+        }
 
         $weekdays = [
             1 => 'Lunes',
@@ -127,6 +144,7 @@ class AttendanceWeeklyAverageChart extends ChartWidget
         return RawJs::make(<<<'JS'
 {
   responsive: true,
+  maintainAspectRatio: false,
   scales: {
     y: {
       beginAtZero: true,
@@ -181,6 +199,32 @@ JS);
         $avg = array_sum($minutes) / count($minutes);
 
         return round($avg / 60, 2);
+    }
+
+    private function getDefaultMonth(): string
+    {
+        $latestCheckIn = AttendanceSession::query()
+            ->whereNotNull('check_in_at')
+            ->whereNotNull('check_out_at')
+            ->max('check_in_at');
+
+        if (! $latestCheckIn) {
+            return now()->format('Y-m');
+        }
+
+        return Carbon::parse($latestCheckIn)->format('Y-m');
+    }
+
+    /**
+     * @return Collection<int, AttendanceSession>
+     */
+    private function getClosedSessionsBetween(Carbon $start, Carbon $end): Collection
+    {
+        return AttendanceSession::query()
+            ->whereBetween('check_in_at', [$start, $end])
+            ->whereNotNull('check_in_at')
+            ->whereNotNull('check_out_at')
+            ->get(['check_in_at', 'check_out_at']);
     }
 
     private function formatMonthLabel(Carbon $month): string
